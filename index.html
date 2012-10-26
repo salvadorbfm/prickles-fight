@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<script src="/src/underscore.js"></script>
+	<script src="/src/backbone.js"></script>
+	<script src="/src/backbone-localstorage.js"></script>	
+	<script src="/src/processing-1.4.1.js"></script>
+	<script src="/js/game_sem.js"></script>
+</head>
+<body>
+
+<p><canvas id="myCanvas" width="1000" height="1000"> </canvas></p>
+	<script id="script1" type="text/javascript">
+		var canvas = document.getElementById("myCanvas");
+		var p = new Processing(canvas, Game.sketch);
+		// p.exit(); to detach it
+	</script>
+
+</body>
+</html>
