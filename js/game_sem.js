@@ -6,15 +6,13 @@ var Game = (function() {
         config = config || {};
         var self = {};
 
-        self.x = config.x || 0;
-        self.y = config.y || 0;
+        self.x = config.x || 0.0;
+        self.y = config.y || 0.0;
 
-        self.width = config.width || 20;
-        self.height = config.height || 20;
+        self.width = config.width || 20.0;
+        self.height = config.height || 20.0;
         self.speed_x = config.speed_x || 1.0;
         self.speed_y = config.speed_y || 1.0;
-
-        self.boost  = config.boost || 0;
 
         self.direction_x = 1.0;
         self.direction_y = 1.0;
@@ -24,66 +22,52 @@ var Game = (function() {
 
         self.drawable = true;
 
+        self.is_collision = false;
+
         self.get_center_x = function(){
-            return self.x + self.width/2;
+            return self.x + self.width/2.0;
         };
 
         self.get_center_y = function(){
-            return self.y + self.height/2;
+            return self.y + self.height/2.0;
         };
 
         self.calculate_direction = function(val){
-            if(val>600 || val <0){
+            if(val>585 || val <2){
                 return -1.0;
             }else{
                 return 1.0;
             }
         };
 
-        self.invert_direction = function(directionArg){
+        self.invert_speed = function(directionArg){
             var direction = directionArg || '0';
 
             if(direction == 'x'){
-                self.direction_x = -1;
-                self.speed_x = self.speed_x * self.direction_x;
+                self.speed_x *= -1.0;
             }
             else if(direction == 'y'){
-                self.direction_y = -1;
-                self.speed_y = self.speed_y * self.direction_y;
+                self.speed_y *= -1.0;
             }
             else{
-                self.direction_x = -1;
-                self.direction_y = -1;
-                self.speed_x = self.speed_x * self.direction_x;
-                self.speed_y = self.speed_y * self.direction_y;
+                self.speed_x *= -1.0;
             }
         };
 
 
-        self.update_speed = function(){
-            self.direction_x = self.calculate_direction(self.x);
-            self.direction_y = self.calculate_direction(self.y);
-
-
-            self.speed_x = self.speed_x * self.direction_x;
-            self.speed_y = self.speed_y * self.direction_y;
-        };
-
-        self.check_boundary = function(){
-
-        };
         self.update_position = function(){
 
-            self.direction_x *= self.calculate_direction(self.x);
-            self.direction_y *= self.calculate_direction(self.y);
+            self.speed_x *= self.calculate_direction(self.x);
+            self.speed_y *= self.calculate_direction(self.y);
 
-            self.speed_x *= self.direction_x;
-            self.speed_y *= self.direction_y;
+            self.x += self.speed_x;
+            self.y += self.speed_y;
 
-            self.x += self.speed_x + self.boost;
-            self.y += self.speed_y + self.boost;
-            console.log("//"+self.x+":"+self.y);
-            self.boost = 0;
+            if(self.is_collision == true)
+            {
+                self.is_collision = false;
+            }
+            //console.log("//"+self.x+":"+self.y);
         };
 
         return self;
@@ -119,8 +103,20 @@ var Game = (function() {
             var normalized = {};
 
             min = 99999.0;
+
+            self.speed_x = 3.0;
+            self.speed_y = 3.0;
             for (var i = sprites.length - 1; i >= 0; i--) {
-                if(sprites.drawable == false) continue;
+                if(sprites[i].drawable == false) continue;
+
+                debugger;
+                magnitude = util.get_magnitude(
+                            center,
+                            {
+                            x:sprites[i].x,
+                            y:sprites[i].y
+                            }
+                            );
 
                 distance = util.get_distance(
                             center,
@@ -130,18 +126,15 @@ var Game = (function() {
                             }
                             );
 
-                magnitude = util.get_magnitude(distance);
                 if( magnitude<min ){
                     min = magnitude;
                     self.sprite_target = i;
-                    //console.log("Evil  search()... mag:"+magnitude+" min:"+min);
-                    console.log(self.x+":"+self.y);
                     distance_to_enemy = distance;
                 }
             }
             normalized = util.normalize(distance_to_enemy);
-            self.direction_x = normalized.x;
-            self.direction_y = normalized.y;
+            self.speed_x *= normalized.x;
+            self.speed_y *= normalized.y;
             self.update_position();
         };
 
@@ -151,8 +144,11 @@ var Game = (function() {
             var phys = phys || {};
 
             if(self.sprite_target >= 0) {
-                if( phys.check_collision( self, sprites[self.sprite_target]) ){
+                if( phys.check_collision( self, sprites[self.sprite_target]) )
+                {
                     sprites[self.sprite_target].drawable = false;
+                    self.sprite_target = 0;
+                    debugger;
                 }
             }
         };
@@ -172,25 +168,27 @@ var Game = (function() {
             return filledArray;
         };
 
+        self.get_magnitude = function(p1,p2){
+            return Math.sqrt((p2.x-p1.x)*(p2.x-p1.x) + (p2.y-p1.y)*(p2.y-p1.y));
+        };
         self.get_distance = function(p1,p2){
-            //return Math.sqrt((p2.x-p1.x)*(p2.x-p1.x) + (p2.y-p1.y)*(p2.y-p1.y));
             var distance = {};
             distance.x = p2.x - p1.x;
             distance.y = p2.y - p1.y;
             return distance;
         };
 
-        self.get_magnitude = function(p){
+        self.get_magnitude_sa = function(p){
             var magnitude =  Math.sqrt(p.x*p.x + p.y*p.y);
-
+            //debugger;
             if(magnitude < 0.00001)
-                return 1;
+                return 1.0;
             else
                 return magnitude;
         };
 
         self.normalize = function(p){
-            magnitude = self.get_magnitude(p);
+            magnitude = self.get_magnitude_sa(p);
             return {
                 x: p.x/magnitude,
                 y: p.y/magnitude
@@ -212,16 +210,18 @@ var Game = (function() {
             var radB = 0;
             var centerA = {};
             var centerB = {};
-            var distance = 0;
+            var magnitude = 0;
 
-            radA = Math.floor(spriteA.width/2);
-            radB = Math.floor(spriteB.width/2);
+            radA = (spriteA.width/2.0);
+            radB = (spriteB.width/2.0);
             centerA = {x:spriteA.get_center_x(), y:spriteA.get_center_y()};
             centerB = {x:spriteB.get_center_x(), y:spriteB.get_center_y()};
 
-            distance = util.get_distance(centerA,centerB);
+            magnitude = util.get_magnitude(centerA,centerB);
+            //return false;
 
-            if (distance < (radA + radB))
+            //debugger;
+            if ((magnitude) < (radA + radB))
             {
                 return true;
             }else{
@@ -234,6 +234,7 @@ var Game = (function() {
             sprites = sprites || new Array();
             var auxArray = util.get_filled_array(sprites.length, false);
 
+            //console.log("SEM check_collisions");
             for(var i=0; i<sprites.length; i++){
                 if(auxArray[i] == true) continue;
                 if(sprites[i].drawable == false) continue;
@@ -242,15 +243,12 @@ var Game = (function() {
                         continue;
                     if(sprites[j].drawable == false) continue;
 
-                    //console.log("i:",i,"j:",j);
                     if(self.check_collision(sprites[i],sprites[j])){
-                        //console.log("Sprites have collided!");
                         auxArray[i] = true;
                         auxArray[j] = true;
-                        sprites[i].invert_direction();
-                        sprites[j].invert_direction();
-                        sprites[i].boost = 3;
-
+                        sprites[i].invert_speed();
+                        sprites[j].invert_speed();
+                        sprites[j].is_collision = true;
                     }else{
                         //console.log("Not collision yet");
                     }
@@ -274,12 +272,12 @@ var Game = (function() {
         RGB1[2] = 50;
 
         var happy = Sprite({
-            x : Math.floor((Math.random()*100)+1),
-            y : Math.floor((Math.random()*100)+1),
-            width : 20,
-            height : 20,
-            speed_x : Math.floor((Math.random()*5)+1),
-            speed_y : Math.floor((Math.random()*5)+1),
+            x : (Math.random()*100),
+            y : (Math.random()*100),
+            width : 20.0,
+            height : 20.0,
+            speed_x : (Math.random()*5),
+            speed_y : (Math.random()*5),
             RGB: RGB1
         });
 
@@ -289,23 +287,24 @@ var Game = (function() {
 
         // antes Sprite()
         var evil = Evil({
-            x : Math.floor((Math.random()*300)+1),
-            y : Math.floor((Math.random()*200)+1),
-            width : 20,
-            height : 20,
-            speed_x : Math.floor((Math.random()*10)+1),
-            speed_y : Math.floor((Math.random()*10)+1),
+            x : (Math.random()*300),
+            y : (Math.random()*200),
+            width : 20.0,
+            height : 20.0,
+            speed_x : (Math.random()*10),
+            speed_y : (Math.random()*10),
             RGB: RGB2
         });
+        //console.log(self.x+":"+self.y);
 
-        for(var i=0; i<10; i++){
+        for(var i=0; i<20; i++){
             temp_sprite = Sprite({
-                        x : Math.floor((Math.random()*300)+1),
-                        y : Math.floor((Math.random()*200)+1),
-                        width : 20,
-                        height : 20,
-                        speed_x : Math.floor((Math.random()*5)+1),
-                        speed_y : Math.floor((Math.random()*5)+1)
+                        x : (Math.random()*300),
+                        y : (Math.random()*200),
+                        width : 20.0,
+                        height : 20.0,
+                        speed_x : (Math.random()*5)+1.0,
+                        speed_y : (Math.random()*5)+1.0
             });
             sprites.push( temp_sprite );
         }
@@ -324,7 +323,7 @@ var Game = (function() {
             //debugger;
             processing.ellipse(evil.x, evil.y, evil.width, evil.height);
 
-            for(var i=0; i<10; i++){
+            for(var i=0; i<sprites.length; i++){
                 if(sprites[i].drawable == false) continue;
                 processing.fill(sprites[i].RGB[0],sprites[i].RGB[1],sprites[i].RGB[2]);
                 processing.ellipse(sprites[i].x,sprites[i].y,sprites[i].width,sprites[i].height);
@@ -332,16 +331,13 @@ var Game = (function() {
 
             phys.check_collisions(sprites);
 
+            //TODO Better logic
             evil.search(happy, sprites);
-            //debugger;
-            //evil.update_position();
-            //evil.destroy(happy, sprites, phys);
+            evil.destroy(happy, sprites, phys);
 
             happy.update_position();
 
-
-
-            for(var i=0; i<10; i++){
+            for(var i=0; i<sprites.length; i++){
                 if(sprites[i].drawable == false) continue;
                 sprites[i].update_position();
             }
