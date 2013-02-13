@@ -1,0 +1,18 @@
+
+
+
+
+#game_container {
+    width: 700px;
+    height: 500px;
+    background: url(js/content/splash_screen.png);
+    background: url(js/content/splash_screen.png);
+    border: 1px solid black;
+}
+
+.game_layer {
+    width: 40%;
+    margin: 0px auto;
+    border: thick solid #444433;
+    display: block;
+}

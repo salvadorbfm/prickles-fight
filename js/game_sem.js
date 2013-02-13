@@ -6,6 +6,8 @@ var Game = (function() {
         config = config || {};
         var self = {};
 
+        //self.image = loadImage("content/happy_left.png");
+
         self.x = config.x || 0.0;
         self.y = config.y || 0.0;
 
@@ -78,6 +80,9 @@ var Game = (function() {
 
         self = Sprite(config);
 
+        //self.image = loadImage("content/happy_left.png");
+
+        //console.log(self.image);
         // User Input sprite
 
         return self;
@@ -319,6 +324,7 @@ var Game = (function() {
 
             processing.fill(happy.RGB[0], happy.RGB[1], happy.RGB[2]);
             processing.ellipse(happy.x, happy.y, happy.width, happy.height);
+            //image(happy.image, happy.x, happy.y);
             processing.fill(evil.RGB[0], evil.RGB[1], evil.RGB[2]);
             //debugger;
             processing.ellipse(evil.x, evil.y, evil.width, evil.height);
