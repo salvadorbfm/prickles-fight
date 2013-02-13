@@ -141,10 +141,65 @@ var Game = (function() {
 
         self = Sprite(config);
 
-        //self.image = loadImage("content/happy_left.png");
+        self.x_mouse = 0;
+        self.y_mouse = 0;
+        self.down=false;
 
-        //console.log(self.image);
-        // User Input sprite
+        self.init = function(){
+            $('#game_canvas').mousemove(self.mouse_move_handler);
+            $('#game_canvas').mousedown(self.mouse_down_handler);
+            $('#game_canvas').mouseup(self.mouse_up_handler);
+            $('#game_canvas').mouseout(self.mouse_up_handler);
+        };
+
+        self.mouse_move_handler = function(ev){
+            var offset = $('#game_canvas').offset();
+            self.x_mouse =  ev.pageX - offset.left;
+            self.y_mouse = ev.pageY - offset.top;
+            if (self.down) {
+              self.dragging = true;
+            }
+        };
+
+        self.mouse_down_handler = function(ev){
+            self.down = true;
+            self.downX = self.x_mouse;
+            self.downY = self.y_mouse;
+            console.log("SEM: ("+ self.downX + "," + self.downY + ")");
+            var center = {x:self.get_center_x(), y:self.get_center_y()};
+            var distance = util.get_distance(
+                                            center,
+                                            {
+                                            x:self.downX,
+                                            y:self.downY
+                                            }
+            );
+            var normalized = util.normalize(distance);
+
+            self.direction_x = normalized.x;
+            self.direction_y = normalized.y;
+//            self.update_position();
+
+
+            ev.originalEvent.preventDefault();
+        };
+
+        self.mouse_up_handler = function(ev){
+            self.down = false;
+            self.dragging = false;
+
+        };
+
+        self.is_a_ball_destroyed = function(sprites){
+
+            for (var i = 0; i < sprites.length; i++) {
+                if (sprites[i].drawable == false) continue;
+                if (phys.check_collision( self, sprites[i])){
+                    sprites[i].drawable = false;
+                    self.balloons_destroyed++;
+                }
+            };
+        };
 
         return self;
     };
@@ -161,7 +216,7 @@ var Game = (function() {
 
         // search(happy,sprites)
         // This function looks for the closest sprite
-        self.search = function(happy, sprites){
+        self.search = function(happy, sprites, ally_target){
             var center = {x:self.get_center_x(), y:self.get_center_y()};
             var min = 0;
             var distance = {};
@@ -171,12 +226,12 @@ var Game = (function() {
 
             min = 99999.0;
 
+            self.sprite_target = -1;
             self.speed_x = util.get_random(6.0,8.0);
             self.speed_y = util.get_random(6.0,8.0);
             for (var i = sprites.length - 1; i >= 0; i--) {
                 if(sprites[i].drawable == false) continue;
 
-                //debugger;
                 magnitude = util.get_magnitude(
                             center,
                             {
@@ -193,19 +248,24 @@ var Game = (function() {
                             }
                             );
 
-                if( magnitude<min ){
+                if( magnitude<min && ally_target!=i){
                     min = magnitude;
                     self.sprite_target = i;
                     distance_to_enemy = distance;
                 }
             }
             normalized = util.normalize(distance_to_enemy);
-            //self.speed_x *= normalized.x;
-            //self.speed_y *= normalized.y;
 
-            self.direction_x = normalized.x || 1.0;
-            self.direction_y = normalized.y || 1.0;
+            if (self.sprite_target == -1)
+            {
+                self.direction_x = Math.random();
+                self.direction_y = Math.random();
+            }else {
+                self.direction_x = normalized.x;
+                self.direction_y = normalized.y;
+            }
             self.update_position();
+            return self.sprite_target;
         };
 
         self.destroy = function(happy, sprites, phys){
@@ -310,13 +370,15 @@ var Game = (function() {
 
         // Checking collision between two sprites
         self.check_collision = function(spriteA, spriteB){
-            var spriteA = spriteA || {};  // Here, I should check the error of having a "null" sprite
-            var spriteB = spriteB || {};
+            var spriteA = spriteA || null;  // Here, I should check the error of having a "null" sprite
+            var spriteB = spriteB || null;
             var radA = 0;
             var radB = 0;
             var centerA = {};
             var centerB = {};
             var magnitude = 0;
+
+            if (spriteA == null && spriteB == null) return false;
 
             radA = (spriteA.width/2.0);
             radB = (spriteB.width/2.0);
@@ -424,7 +486,7 @@ var Game = (function() {
     var evil_frame = 0;
     var happy_frame = 0;
 
-    var evil;
+    var evil = [];
     var happy;
     var balloons= [];                                      // A lot of balloons
 
@@ -447,31 +509,21 @@ var Game = (function() {
         body.appendChild(main_div);
         main_div.appendChild(canvas);
 
-        evil = Evil({
-            x : util.get_random_int(100,300),
-            y : util.get_random_int(100,300),
-            width : 70.0,
-            height : 70.0,
-            assets: evil_assets
-        });
-
         happy = Happy({
             x : util.get_random_int(0,100),
             y : util.get_random_int(350,500),
             width : 70.0,
             height : 70.0,
-            speed_x : util.get_random(1.0,3.0),
-            speed_y : util.get_random(1.0,3.0),
+            speed_x : util.get_random(5.0,6.0),
+            speed_y : util.get_random(5.0,6.0),
             direction_x : util.get_random(-1.0,1.0),
             direction_y : util.get_random(-1.0,1.0),
             assets: happy_assets
         });
 
-
-
-
-        evil.build_frames();
+        happy.init();
         happy.build_frames();
+        add_evils();
         add_balloons();
 
         setInterval(animate, frames_rate);
@@ -480,15 +532,20 @@ var Game = (function() {
         setInterval(update_balloons, balloons_frames_rate);
     };
 
-    var animate = function(){
+    var animate = function() {
+        var last_target = -1;
         context.clearRect(0,0,canvas.width, canvas.height);
 
         context.drawImage(happy.frames[happy_frame], happy.x, happy.y);
-        context.drawImage(evil.frames[evil_frame], evil.x, evil.y);
-
+        happy.is_a_ball_destroyed(balloons);
         happy.update_position();
-        evil.search(happy,balloons);
-        evil.destroy(happy, balloons, phys);
+
+        for (var i = 0; i < evil.length; i++) {
+            context.drawImage(evil[i].frames[evil_frame], evil[i].x, evil[i].y);
+            last_target = evil[i].search(happy,balloons,last_target);
+            evil[i].destroy(happy, balloons, phys);
+        };
+
 
         phys.check_collisions(balloons);
         for (var i = 0; i < balloons.length; i++) {
@@ -500,20 +557,41 @@ var Game = (function() {
 
 
     var update_evil = function() {
-        evil_frame = (evil_frame + 1) % evil.frames.length;
-    }
+        evil_frame = (evil_frame + 1) % evil[0].frames.length;
+    };
     var update_happy = function() {
         happy_frame = (happy_frame + 1) % happy.frames.length;
-    }
+    };
 
     var update_balloons = function() {
         var new_ballons = util.get_random_int(1,3);
-        if ((balloons.length - evil.balloons_destroyed) < 25)
-            add_balloons(2);
+        var max = (evil[0].balloons_destroyed > evil[1].balloons_destroyed)?(evil[0].balloons_destroyed):(evil[1].balloons_destroyed);
+        if ((balloons.length) < 25)
+            add_balloons(4);
+    };
 
-        console.log("SEM: evil:(" + evil.x + "," + evil.y + ")");
-    }
+    var add_evils = function(n_evils) {
+        n_evils = n_evils || 3;
+        var x;
+        var y;
 
+
+        x=0;
+        y=0;
+
+        for (var i = 0; i < n_evils; i++) {
+            evil.push( Evil({
+                            x : util.get_random_int(x,x+250),
+                            y : util.get_random_int(y,y+300),
+                            width : 70.0,
+                            height : 70.0,
+                            assets: evil_assets
+                            }));
+            evil[i].build_frames();
+            x += 250;
+            y += 300;
+        };
+    };
     var add_balloons = function (n_balloons) {
         var current_index = 0;
         var x;// = util.get_random_int(0, game_width);
@@ -544,8 +622,9 @@ var Game = (function() {
             }));
             balloons[current_index + i].build_frames();
         }
-        console.log("SEM add_balloons: " + " new_ballons:" + n_balloons + " len:"  + balloons.length);
-    }
+        //console.log("SEM add_balloons: " + " new_ballons:" + n_balloons + " len:"  + balloons.length);
+    };
+
 
     game.setup = setup();
     return game;
