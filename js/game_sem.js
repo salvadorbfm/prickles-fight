@@ -1,7 +1,9 @@
 var Game = (function() {
 
 
-    var Game = [];
+    var game = [];
+    var game_width = 700;
+    var game_height = 500;
     var Sprite = function(config){
         config = config || {};
         var self = {};
@@ -15,16 +17,39 @@ var Game = (function() {
         self.height = config.height || 20.0;
         self.speed_x = config.speed_x || 1.0;
         self.speed_y = config.speed_y || 1.0;
+        self.boost = 3.0;
 
-        self.direction_x = 1.0;
-        self.direction_y = 1.0;
-        //Math.floor(self.speed_y/Math.abs(self.speed_y));
+        self.direction_x = config.direction_y || 1.0;
+        self.direction_y = config.direction_y || 1.0;
 
         self.RGB = config.RGB || [200,200,200];
 
         self.drawable = true;
 
+        self.balloons_destroyed = 0;
+
         self.is_collision = false;
+        self.last_collision_with = -1;
+// ******************** New Features, work in progress   Feb 2013
+
+        self.assets = config.assets || [];
+        self.frames = [];
+        self.frame = [];
+
+        self.build_frames = function()
+        {
+            for (var i = 0; i < self.assets.length; i++) {
+              self.frames.push(new Image());
+              self.frames[i].src = self.assets[i];
+              self.frames[i].onload = self.onImageLoad;
+            }
+        }
+
+        self.onImageLoad = function(){
+            //console.log("IMAGE!!!");
+        };
+// ****************************************************
+
 
         self.get_center_x = function(){
             return self.x + self.width/2.0;
@@ -34,42 +59,78 @@ var Game = (function() {
             return self.y + self.height/2.0;
         };
 
-        self.calculate_direction = function(val){
-            if(val>585 || val <2){
-                return -1.0;
-            }else{
-                return 1.0;
-            }
-        };
 
-        self.invert_speed = function(directionArg){
+        self.invert_position = function(directionArg){
             var direction = directionArg || '0';
 
             if(direction == 'x'){
-                self.speed_x *= -1.0;
+                self.direction_x *= -1.0;
             }
             else if(direction == 'y'){
-                self.speed_y *= -1.0;
+                self.direction_y *= -1.0;
             }
             else{
-                self.speed_x *= -1.0;
+                self.direction_x *= -1.0;
+                self.direction_y *= -Math.random();
             }
         };
 
+        self.calculate_direction = function(axis){
+            var max = 0;
+            var min = -5;
+
+            if (axis == 'y') {
+                max = game_height;
+                if ( (self.y + self.direction_y*self.speed_y) > max )
+                  return true;
+                if ( (self.y + self.direction_y*self.speed_y) < 0)
+                  return true;
+            }
+            else if (axis == 'x') {
+                max = game_width;
+                if ( (self.x + self.direction_x*self.speed_x) > max )
+                  return true;
+                if ( (self.x + self.direction_x*self.speed_x) < 0)
+                  return true;
+            }
+            else {
+                max = (game_width>game_height)? game_width:game_height;
+            }
+            return false;
+
+        };
 
         self.update_position = function(){
+            var temp_x = 0;
+            var temp_y = 0;
+            var energy_boost_x = 0;
+            var energy_boost_y = 0;
 
-            self.speed_x *= self.calculate_direction(self.x);
-            self.speed_y *= self.calculate_direction(self.y);
+            var wall_in_x = self.calculate_direction( 'x');
+            var wall_in_y = self.calculate_direction( 'y');
 
-            self.x += self.speed_x;
-            self.y += self.speed_y;
 
-            if(self.is_collision == true)
+            if (self.is_collision == true)
             {
+                self.invert_position();
+                energy_boost_x = 5.0;
+                energy_boost_y = 5.0;
                 self.is_collision = false;
             }
-            //console.log("//"+self.x+":"+self.y);
+
+            if (wall_in_x == true) {
+                self.direction_x *= -1.0;
+                energy_boost_x = 10.0;
+            }
+            if (wall_in_y == true) {
+              self.direction_y *= -1.0;
+              energy_boost_y = 10.0;
+            }
+            temp_x = self.x;
+            temp_y = self.y;
+            self.x += ( (self.direction_x)*(self.speed_x + energy_boost_x) );
+            self.y += ( (self.direction_y)*(self.speed_y + energy_boost_y) );
+            //if (self.y < 1) debugger;
         };
 
         return self;
@@ -80,10 +141,92 @@ var Game = (function() {
 
         self = Sprite(config);
 
-        //self.image = loadImage("content/happy_left.png");
+        self.x_mouse = 0;
+        self.y_mouse = 0;
+        self.down=false;
 
-        //console.log(self.image);
-        // User Input sprite
+        self.init = function(){
+            $('#game_canvas').mousemove(self.mouse_move_handler);
+            $('#game_canvas').mousedown(self.mouse_down_handler);
+            $('#game_canvas').mouseup(self.mouse_up_handler);
+            $('#game_canvas').mouseout(self.mouse_up_handler);
+
+            //$('body').keypress(self.keypress_handler);
+        };
+
+        self.keypress_handler = function(ev) {
+            var key = ev.keyCode || ev.which;
+            //console.log("keypress: key:" + key);
+            switch (key) {
+                case 119: // W
+                    self.direction_x = 0;
+                    self.direction_y = -1;
+                break;
+                case 97: // A
+                    self.direction_x = -1;
+                    self.direction_y = 0;
+                break;
+                case 115: // S
+                    self.direction_x = 0;
+                    self.direction_y = 1;
+                break;
+                case 100: // D
+                    self.direction_x = 1;
+                    self.direction_y = 0;
+                break;
+                default:
+            }
+
+        };
+
+        self.mouse_move_handler = function(ev){
+            var offset = $('#game_canvas').offset();
+            self.x_mouse =  ev.pageX - offset.left;
+            self.y_mouse = ev.pageY - offset.top;
+            if (self.down) {
+              self.dragging = true;
+            }
+        };
+
+        self.mouse_down_handler = function(ev){
+            self.down = true;
+            self.downX = self.x_mouse;
+            self.downY = self.y_mouse;
+            console.log("SEM: ("+ self.downX + "," + self.downY + ")");
+            var center = {x:self.get_center_x(), y:self.get_center_y()};
+            var distance = util.get_distance(
+                                            center,
+                                            {
+                                            x:self.downX,
+                                            y:self.downY
+                                            }
+            );
+            var normalized = util.normalize(distance);
+
+            self.direction_x = normalized.x;
+            self.direction_y = normalized.y;
+//            self.update_position();
+
+
+            ev.originalEvent.preventDefault();
+        };
+
+        self.mouse_up_handler = function(ev){
+            self.down = false;
+            self.dragging = false;
+
+        };
+
+        self.is_a_ball_destroyed = function(sprites){
+
+            for (var i = 0; i < sprites.length; i++) {
+                if (sprites[i].drawable == false) continue;
+                if (phys.check_collision( self, sprites[i])){
+                    sprites[i].drawable = false;
+                    self.balloons_destroyed++;
+                }
+            };
+        };
 
         return self;
     };
@@ -97,9 +240,10 @@ var Game = (function() {
 
         self.sprite_target = config.sprite_target || -1;
 
+
         // search(happy,sprites)
         // This function looks for the closest sprite
-        self.search = function(happy, sprites){
+        self.search = function(happy, sprites, ally_target){
             var center = {x:self.get_center_x(), y:self.get_center_y()};
             var min = 0;
             var distance = {};
@@ -109,12 +253,12 @@ var Game = (function() {
 
             min = 99999.0;
 
-            self.speed_x = 3.0;
-            self.speed_y = 3.0;
+            self.sprite_target = -1;
+            self.speed_x = util.get_random(6.0,8.0);
+            self.speed_y = util.get_random(6.0,8.0);
             for (var i = sprites.length - 1; i >= 0; i--) {
                 if(sprites[i].drawable == false) continue;
 
-                debugger;
                 magnitude = util.get_magnitude(
                             center,
                             {
@@ -131,16 +275,24 @@ var Game = (function() {
                             }
                             );
 
-                if( magnitude<min ){
+                if( magnitude<min && ally_target!=i){
                     min = magnitude;
                     self.sprite_target = i;
                     distance_to_enemy = distance;
                 }
             }
             normalized = util.normalize(distance_to_enemy);
-            self.speed_x *= normalized.x;
-            self.speed_y *= normalized.y;
+
+            if (self.sprite_target == -1)
+            {
+                self.direction_x = Math.random();
+                self.direction_y = Math.random();
+            }else {
+                self.direction_x = normalized.x;
+                self.direction_y = normalized.y;
+            }
             self.update_position();
+            return self.sprite_target;
         };
 
         self.destroy = function(happy, sprites, phys){
@@ -152,8 +304,9 @@ var Game = (function() {
                 if( phys.check_collision( self, sprites[self.sprite_target]) )
                 {
                     sprites[self.sprite_target].drawable = false;
+                    self.balloons_destroyed++;
                     self.sprite_target = 0;
-                    debugger;
+                    //debugger;
                 }
             }
         };
@@ -165,12 +318,12 @@ var Game = (function() {
     {
         var self = {};
         self.get_filled_array = function (len, val) {
-            var filledArray = new Array(len);
+            var filled_array = new Array(len);
             for(var i=0; i<len; i++)
             {
-                filledArray[i] = val;
+                filled_array[i] = val;
             }
-            return filledArray;
+            return filled_array;
         };
 
         self.get_magnitude = function(p1,p2){
@@ -194,10 +347,45 @@ var Game = (function() {
 
         self.normalize = function(p){
             magnitude = self.get_magnitude_sa(p);
-            return {
-                x: p.x/magnitude,
-                y: p.y/magnitude
-            }
+            if (magnitude < 0.001)
+                return {
+                  x : 1.0,
+                  y : 1.0
+                }
+            else
+                return {
+                    x: p.x/magnitude,
+                    y: p.y/magnitude
+                }
+        }
+
+        self.get_random_int = function(min, max) {
+            return Math.floor( Math.random() * (max-min+1) ) + min;
+        }
+
+        self.get_random = function(min, max) {
+            return  Math.random() * (max-min) + min;
+        }
+
+
+
+        self.is_unique_position = function(x,y, initial_positions, width, height) {
+          // TODO Feb 11
+          var ref_x = 0;
+          var ref_y = 0;
+
+
+          for (var i = 0; i < initial_positions.length; i++) {
+            ref_x = initial_positions[i].x;
+            ref_y = initial_positions[i].y;
+
+            if ( ((x < (ref_x + width/2)) && (x > (ref_x - width/2))) && ((y < (ref_y + height/2)) && (y > (ref_y - height/2))) ) {
+                console.log("SEM: " + x + ":" + y);
+                return false;
+              }
+          }
+
+          return true;
         }
         return self;
     };
@@ -209,13 +397,15 @@ var Game = (function() {
 
         // Checking collision between two sprites
         self.check_collision = function(spriteA, spriteB){
-            var spriteA = spriteA || {};  // Here, I should check the error of having a "null" sprite
-            var spriteB = spriteB || {};
+            var spriteA = spriteA || null;  // Here, I should check the error of having a "null" sprite
+            var spriteB = spriteB || null;
             var radA = 0;
             var radB = 0;
             var centerA = {};
             var centerB = {};
             var magnitude = 0;
+
+            if (spriteA == null && spriteB == null) return false;
 
             radA = (spriteA.width/2.0);
             radB = (spriteB.width/2.0);
@@ -223,9 +413,7 @@ var Game = (function() {
             centerB = {x:spriteB.get_center_x(), y:spriteB.get_center_y()};
 
             magnitude = util.get_magnitude(centerA,centerB);
-            //return false;
 
-            //debugger;
             if ((magnitude) < (radA + radB))
             {
                 return true;
@@ -234,122 +422,260 @@ var Game = (function() {
             }
         };
 
-        // Checking collision among all the balloons
+        self.check_collision_by_points = function(x, y, width, sprites) {
+            var radA;
+            var radB;
+            var centerA;
+            var centerB;
+            var magnitude;
+            for (var i = 0; i < sprites.length; i++) {
+              radA = width/2;
+              radB = sprites[i].width/2;
+              centerA = {x:x,y:y};
+              centerB = {x:sprites[i].get_center_x(), y:sprites[i].get_center_y()};
+
+              magnitude = util.get_magnitude(centerA,centerB);
+              if ((magnitude+10) < (radA + radB)) {
+                //debugger;
+                return true;
+              }
+            };
+
+            return false;
+        };
+
+        // For each balloon, checks if there is a collision.
         self.check_collisions = function(sprites){
             sprites = sprites || new Array();
-            var auxArray = util.get_filled_array(sprites.length, false);
+            var is_changed = util.get_filled_array(sprites.length, false);
 
-            //console.log("SEM check_collisions");
-            for(var i=0; i<sprites.length; i++){
-                if(auxArray[i] == true) continue;
-                if(sprites[i].drawable == false) continue;
-                for(var j=0; j<sprites.length; j++){
-                    if(auxArray[j] == true || i==j )
-                        continue;
-                    if(sprites[j].drawable == false) continue;
+            for (var i=0; i<sprites.length; i++){
+                if (is_changed[i] == true) continue;
+                if (sprites[i].drawable == false) continue;
+                if (sprites[i].last_collision_with == j) {
+                  //debugger;
+                  continue;
+                }
 
-                    if(self.check_collision(sprites[i],sprites[j])){
-                        auxArray[i] = true;
-                        auxArray[j] = true;
-                        sprites[i].invert_speed();
-                        sprites[j].invert_speed();
+                for (var j=0; j<sprites.length; j++){
+                    // ************************************************** TODO
+                    // ************************* Oopps!
+                    // This is not working, I need to save the last state and avoid repeated collisions ...
+                    if (is_changed[i] == true || i==j ) continue;
+                    if (sprites[j].drawable == false) continue;
+                    if (sprites[j].last_collision_with == i) continue;
+
+                    if (self.check_collision(sprites[i],sprites[j])){
+                        sprites[i].is_collision = true;
+                        sprites[i].last_collision_with = j;
                         sprites[j].is_collision = true;
-                    }else{
-                        //console.log("Not collision yet");
+                        sprites[j].last_collision_with = i;
+                        is_changed[j] = true;
+                        is_changed[i] = true;
                     }
-
                 }
             }
+            for (var i = 0; i < is_changed.length; i++) {
+                if (is_changed[i] == false)
+                    sprites[i].last_collision_with = -1;
+            };
         };
 
         return self;
     };
 
-    Game.sketch = function(processing){
-        processing.noFill();
-        var RGB1 = new Array();
-        var RGB2 = new Array();
-        var sprites = new Array();
-        var phys = Phys();
-        var temp_sprite;
-        RGB1[0] = 128;
-        RGB1[1] = 250;
-        RGB1[2] = 50;
+    var canvas = null;
+    var context = null;
+    var happy_assets = [
+                        '/js/content/happy_right.png',
+                        '/js/content/happy_left.png'
+                       ];
+    var evil_assets = [
+                       '/js/content/evil_right.png',
+                       '/js/content/evil_left.png'
+                      ];
+    var balloons_assets = [
+                           ['/js/content/balloon1.png'],
+                           ['/js/content/balloon2.png'],
+                           ['/js/content/balloon3.png'],
+                           ['/js/content/balloon4.png'],
+                           ['/js/content/balloon5.png'],
+                           ['/js/content/balloon6.png']
+                          ];
 
-        var happy = Sprite({
-            x : (Math.random()*100),
-            y : (Math.random()*100),
-            width : 20.0,
-            height : 20.0,
-            speed_x : (Math.random()*5),
-            speed_y : (Math.random()*5),
-            RGB: RGB1
+    var frames_rate = 1000/30;
+    var happy_frames_rate = 1000/2;
+    var evil_frames_rate = 1000/2;
+    var balloons_frames_rate = 2000;
+    var collisions_frame_rate = 500;
+
+
+    var evil_frame = 0;
+    var happy_frame = 0;
+
+    var evil = [];
+    var happy;
+    var balloons= [];                                      // A lot of balloons
+
+    var phys = Phys();
+    var util = Util();
+
+    var setup = function() {
+        body = document.getElementById('body');
+        //main_div = document.createElement('div');
+        //main_div.id = "main_div";
+        canvas = document.getElementById('game_canvas');
+        //canvas.id = "game_canvas";
+        canvas.className = "game_layer";
+
+        canvas.width = game_width+50;
+        canvas.height = game_height+50;
+
+        context = canvas.getContext('2d');
+
+        //body.appendChild(main_div);
+        //main_div.appendChild(canvas);
+
+        happy = Happy({
+            x : util.get_random_int(0,100),
+            y : util.get_random_int(350,500),
+            width : 70.0,
+            height : 70.0,
+            speed_x : util.get_random(8.0,10.0),
+            speed_y : util.get_random(8.0,10.0),
+            direction_x : util.get_random(-1.0,1.0),
+            direction_y : util.get_random(-1.0,1.0),
+            assets: happy_assets
         });
 
-        RGB2[0] = 250;
-        RGB2[1] = 100;
-        RGB2[2] = 50;
+        happy.init();
+        happy.build_frames();
+        add_evils(2);
+        add_balloons();
 
-        // antes Sprite()
-        var evil = Evil({
-            x : (Math.random()*300),
-            y : (Math.random()*200),
-            width : 20.0,
-            height : 20.0,
-            speed_x : (Math.random()*10),
-            speed_y : (Math.random()*10),
-            RGB: RGB2
-        });
-        //console.log(self.x+":"+self.y);
-
-        for(var i=0; i<20; i++){
-            temp_sprite = Sprite({
-                        x : (Math.random()*300),
-                        y : (Math.random()*200),
-                        width : 20.0,
-                        height : 20.0,
-                        speed_x : (Math.random()*5)+1.0,
-                        speed_y : (Math.random()*5)+1.0
-            });
-            sprites.push( temp_sprite );
-        }
-        // Processing Stuff
-        processing.noStroke();
-        processing.fill(255, 0, 0);
-
-        processing.size(600,600);
-
-        processing.draw = function(){
-            processing.background(0, 0, 0);
-
-            processing.fill(happy.RGB[0], happy.RGB[1], happy.RGB[2]);
-            processing.ellipse(happy.x, happy.y, happy.width, happy.height);
-            //image(happy.image, happy.x, happy.y);
-            processing.fill(evil.RGB[0], evil.RGB[1], evil.RGB[2]);
-            //debugger;
-            processing.ellipse(evil.x, evil.y, evil.width, evil.height);
-
-            for(var i=0; i<sprites.length; i++){
-                if(sprites[i].drawable == false) continue;
-                processing.fill(sprites[i].RGB[0],sprites[i].RGB[1],sprites[i].RGB[2]);
-                processing.ellipse(sprites[i].x,sprites[i].y,sprites[i].width,sprites[i].height);
-            }
-
-            phys.check_collisions(sprites);
-
-            //TODO Better logic
-            evil.search(happy, sprites);
-            evil.destroy(happy, sprites, phys);
-
-            happy.update_position();
-
-            for(var i=0; i<sprites.length; i++){
-                if(sprites[i].drawable == false) continue;
-                sprites[i].update_position();
-            }
-        };
+        setInterval(animate, frames_rate);
+        setInterval(update_score, frames_rate);
+        setInterval(update_evil, evil_frames_rate);
+        setInterval(update_happy, happy_frames_rate);
+        setInterval(update_balloons, balloons_frames_rate);
     };
 
-    return Game;
-})(window);
+    var update_score = function () {
+        var total_destroyed = 0;
+        for (var i = 0; i < evil.length; i++) {
+            total_destroyed += evil[i].balloons_destroyed;
+        };
+        $("#evil_results").html( total_destroyed.toString() );
+        $("#happy_results").html(happy.balloons_destroyed.toString());
+    };
 
+    var animate = function() {
+        var last_target = -1;
+        context.clearRect(0,0,canvas.width, canvas.height);
+
+        context.drawImage(happy.frames[happy_frame], happy.x, happy.y);
+        happy.is_a_ball_destroyed(balloons);
+        happy.update_position();
+
+        for (var i = 0; i < evil.length; i++) {
+            context.drawImage(evil[i].frames[evil_frame], evil[i].x, evil[i].y);
+            last_target = evil[i].search(happy,balloons,last_target);
+            evil[i].destroy(happy, balloons, phys);
+        };
+
+
+        phys.check_collisions(balloons);
+        for (var i = 0; i < balloons.length; i++) {
+          if (balloons[i].drawable == false) continue;
+            context.drawImage(balloons[i].frames[0], balloons[i].x, balloons[i].y);
+            balloons[i].update_position();
+        }
+    };
+
+
+    var update_evil = function() {
+        evil_frame = (evil_frame + 1) % evil[0].frames.length;
+    };
+    var update_happy = function() {
+        if (happy.direction_x > 0)
+            happy_frame = 0;
+        else
+            happy_frame = 1;
+        //happy_frame = (happy_frame + 1) % happy.frames.length;
+    };
+    var counter_balloons = 0;
+
+    var update_balloons = function() {
+        var new_ballons = util.get_random_int(1,3);
+        console.log("update_balloons: "+ counter_balloons);
+        counter_balloons++;
+        release_balloons();
+        var max = (evil[0].balloons_destroyed > evil[1].balloons_destroyed)?(evil[0].balloons_destroyed):(evil[1].balloons_destroyed);
+        if ((balloons.length) < 25)
+            add_balloons(4);
+    };
+
+    var add_evils = function(n_evils) {
+        n_evils = n_evils || 3;
+        var x;
+        var y;
+        var x_temp;
+        var y_temp;
+
+        x=0;
+        y=0;
+
+        for (var i = 0; i < n_evils; i++) {
+            evil.push( Evil({
+                            x : util.get_random_int(x,x+200),
+                            y : util.get_random_int(y,y+200),
+                            width : 70.0,
+                            height : 70.0,
+                            assets: evil_assets
+                            }));
+            evil[i].build_frames();
+            console.log("SEM add_evils new (" + evil[i].x + "," + evil[i].y + ")");
+            x += 250;
+            y += 150;
+        };
+    };
+    var release_balloons = function () {
+        for (var i = 0; i < balloons.length; i++) {
+            if (balloons[i].drawable == false)
+                balloons.splice(i,1);
+        };
+    }
+    var add_balloons = function (n_balloons) {
+        var current_index = 0;
+        var x;// = util.get_random_int(0, game_width);
+        var y;// = util.get_random_int(0, game_height);
+        n_balloons = n_balloons || util.get_random_int(5,10);
+
+
+        current_index = balloons.length;
+        for (var i = 0; i < n_balloons; i++) {
+            do {
+                x = util.get_random_int(0,game_width);
+                y = util.get_random_int(0,game_height);
+            }while ( phys.check_collision_by_points(x, y, 50.0, balloons) == true);
+
+            balloons.push( Sprite({
+              x : x,
+              y : y,
+              direction_x : (util.get_random_int(0,10) > 5)?1.0:-1.0,
+              direction_y : (util.get_random_int(0,10) > 5)?-1.0:1.0,
+              speed_x : 7.0,
+              speed_y : 4.0,
+              width : 50.0,
+              height :50.0,
+              assets: balloons_assets[util.get_random_int(0,5)]
+            }));
+            balloons[current_index + i].build_frames();
+        }
+        //console.log("SEM add_balloons: " + " new_ballons:" + n_balloons + " len:"  + balloons.length);
+    };
+
+
+    game.setup = setup();
+    return game;
+})(window);

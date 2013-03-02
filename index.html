@@ -1,20 +1,31 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<script src="/src/underscore.js"></script>
-	<script src="/src/backbone.js"></script>
-	<script src="/src/backbone-localstorage.js"></script>	
-	<script src="/src/processing-1.4.1.js"></script>
-	<script src="/js/game_sem.js"></script>
+	<link rel="stylesheet" type="text/css" href="styles/game_styles.css">
 </head>
-<body>
-
-<p><canvas id="myCanvas" width="1000" height="1000"> </canvas></p>
-	<script id="script1" type="text/javascript">
-		var canvas = document.getElementById("myCanvas");
-		var p = new Processing(canvas, Game.sketch);
-		// p.exit(); to detach it
-	</script>
+<body id="body">
+<div id="game_header">
+The Prickles Fight!
+</div>
+<div id="main_div">
+    <canvas id="game_canvas">
+    </canvas>
+</div>
+<div id="game_score">
+    <div id="game_score_container">
+        <div id="happy_score">
+           Happy:
+            <span id="happy_results">0</span>
+        </div>
+        <div id="evil_score">
+            Evil:
+            <span id="evil_results">0</span>
+        </div>
+    </div>
+</div>
 
 </body>
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="/js/test_game.js"></script>
+
 </html>

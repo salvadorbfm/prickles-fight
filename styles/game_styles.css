@@ -1,17 +1,71 @@
 
 
-
+@font-face
+{
+font-family: cheri_bold;
+src: url('CHERI___.TTF');
+font-weight:bold;
+font-stretch: semi-expanded;
+}
 
 #game_container {
     width: 700px;
     height: 500px;
-    background: url(js/content/splash_screen.png);
-    background: url(js/content/splash_screen.png);
     border: 1px solid black;
 }
 
 .game_layer {
     margin: 0px auto;
     border: thick solid #444433;
+    background: url(../js/content/fondo1.png);
     display: block;
+}
+
+#game_score {
+    width: 700px;
+    height: 90px;
+    margin: 0px auto;
+    border: 3px solid #440020;
+    font-family: cheri_bold;
+    font-size: 40px;
+}
+#game_header {
+    width: 700px;
+    height: 60px;
+    margin: 0px auto;
+    padding-top:10px;
+    padding-bottom:10px;
+    font-family: cheri_bold;
+    font-size: 45px;
+    text-align:center;
+}
+
+
+
+#game_score_container {
+    width: 420px;
+    height: 90px;
+    margin: 0px auto;
+    padding-top: 10px;
+}
+#happy_score {
+    width:195px;
+    height: 80px;
+    float:left;
+    padding-left:15px;
+    padding-top:10px;
+    display: inline;
+}
+
+#evil_score {
+    width: 195px;
+    height: 80px;
+    float: left;
+    padding-right:15px;
+    padding-top:10px;
+    display: inline;
+}
+
+#evil_results, #happy_results {
+    color: #AA1111;
 }
