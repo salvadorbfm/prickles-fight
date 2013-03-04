@@ -4,6 +4,69 @@ var Game = (function() {
     var game = [];
     var game_width = 700;
     var game_height = 500;
+    var canvas = null;
+    var context = null;
+    var ui_handler = null;
+    var happy_assets = [
+                        '/js/content/happy_right.png',
+                        '/js/content/happy_left.png'
+                       ];
+    var evil_assets = [
+                       '/js/content/evil_right.png',
+                       '/js/content/evil_left.png'
+                      ];
+    var balloons_assets = [
+                           ['/js/content/balloon1.png'],
+                           ['/js/content/balloon2.png'],
+                           ['/js/content/balloon3.png'],
+                           ['/js/content/balloon4.png'],
+                           ['/js/content/balloon5.png'],
+                           ['/js/content/balloon6.png']
+                          ];
+    var background_assets = ['../js/content/fondo1.png',
+                             '../js/content/fondo2.png'];
+
+    var frames_rate = 1000/30;
+    var happy_frames_rate = 1000/2;
+    var evil_frames_rate = 1000/2;
+    var background_frame_rate = 1000;
+    var balloons_frames_rate = 2000;
+    var collisions_frame_rate = 500;
+
+
+    var evil_frame = 0;
+    var happy_frame = 0;
+    var background_frame = 0;
+
+    var evil = [];
+    var happy;
+    var balloons= [];                                      // A lot of balloons
+    var background;
+
+    var Background = function(config) {
+        config = config || {};
+        var self = {};
+
+        self.x = config.x || 0;
+        self.y = config.y || 0;
+
+        self.frames = [];
+        self.assets = config.assets || [];
+
+        self.build_frames = function()
+        {
+            for (var i = 0; i < self.assets.length; i++) {
+              self.frames.push(new Image());
+              self.frames[i].src = self.assets[i];
+              self.frames[i].onload = self.onImageLoad;
+            }
+        }
+        self.onImageLoad = function(){
+            //console.log("IMAGE!!!");
+        };
+
+        return self;
+    };
     var Sprite = function(config){
         config = config || {};
         var self = {};
@@ -70,8 +133,10 @@ var Game = (function() {
                 self.direction_y *= -1.0;
             }
             else{
-                self.direction_x *= -1.0;
-                self.direction_y *= -Math.random();
+                //if (Math.random() > 0.5)
+                    self.direction_x *= -1.0;
+                //if (Math.random() > 0.5)
+                    self.direction_y *= -1.0;
             }
         };
 
@@ -184,7 +249,8 @@ var Game = (function() {
             self.x_mouse =  ev.pageX - offset.left;
             self.y_mouse = ev.pageY - offset.top;
             if (self.down) {
-              self.dragging = true;
+                self.dragging = true;
+                self.go_to_the_point(self.x_mouse, self.y_mouse);
             }
         };
 
@@ -192,21 +258,9 @@ var Game = (function() {
             self.down = true;
             self.downX = self.x_mouse;
             self.downY = self.y_mouse;
-            console.log("SEM: ("+ self.downX + "," + self.downY + ")");
-            var center = {x:self.get_center_x(), y:self.get_center_y()};
-            var distance = util.get_distance(
-                                            center,
-                                            {
-                                            x:self.downX,
-                                            y:self.downY
-                                            }
-            );
-            var normalized = util.normalize(distance);
+            //console.log("SEM: ("+ self.downX + "," + self.downY + ")");
 
-            self.direction_x = normalized.x;
-            self.direction_y = normalized.y;
-//            self.update_position();
-
+            self.go_to_the_point(self.x_mouse, self.y_mouse);
 
             ev.originalEvent.preventDefault();
         };
@@ -226,6 +280,21 @@ var Game = (function() {
                     self.balloons_destroyed++;
                 }
             };
+        };
+
+        self.go_to_the_point = function(x,y) {
+            var center = {x:self.get_center_x(), y:self.get_center_y()};
+            var distance = util.get_distance(
+                                            center,
+                                            {
+                                            x:x,
+                                            y:y
+                                            }
+            );
+            var normalized = util.normalize(distance);
+
+            self.direction_x = normalized.x;
+            self.direction_y = normalized.y;
         };
 
         return self;
@@ -380,7 +449,7 @@ var Game = (function() {
             ref_y = initial_positions[i].y;
 
             if ( ((x < (ref_x + width/2)) && (x > (ref_x - width/2))) && ((y < (ref_y + height/2)) && (y > (ref_y - height/2))) ) {
-                console.log("SEM: " + x + ":" + y);
+                //console.log("SEM: " + x + ":" + y);
                 return false;
               }
           }
@@ -414,7 +483,7 @@ var Game = (function() {
 
             magnitude = util.get_magnitude(centerA,centerB);
 
-            if ((magnitude) < (radA + radB))
+            if ((magnitude + 10.0) < (radA + radB))
             {
                 return true;
             }else{
@@ -484,57 +553,89 @@ var Game = (function() {
         return self;
     };
 
-    var canvas = null;
-    var context = null;
-    var happy_assets = [
-                        '/js/content/happy_right.png',
-                        '/js/content/happy_left.png'
-                       ];
-    var evil_assets = [
-                       '/js/content/evil_right.png',
-                       '/js/content/evil_left.png'
-                      ];
-    var balloons_assets = [
-                           ['/js/content/balloon1.png'],
-                           ['/js/content/balloon2.png'],
-                           ['/js/content/balloon3.png'],
-                           ['/js/content/balloon4.png'],
-                           ['/js/content/balloon5.png'],
-                           ['/js/content/balloon6.png']
-                          ];
-
-    var frames_rate = 1000/30;
-    var happy_frames_rate = 1000/2;
-    var evil_frames_rate = 1000/2;
-    var balloons_frames_rate = 2000;
-    var collisions_frame_rate = 500;
-
-
-    var evil_frame = 0;
-    var happy_frame = 0;
-
-    var evil = [];
-    var happy;
-    var balloons= [];                                      // A lot of balloons
-
     var phys = Phys();
     var util = Util();
 
-    var setup = function() {
-        body = document.getElementById('body');
-        //main_div = document.createElement('div');
-        //main_div.id = "main_div";
-        canvas = document.getElementById('game_canvas');
-        //canvas.id = "game_canvas";
-        canvas.className = "game_layer";
+    var UIHandler = function(config) {
+        config = config || {};
+        var self = {};
 
+        self.init = function() {
+            $('#game_start_button').mouseup(self.game_start_handler);
+            $('#game_start_instructions').mouseup(self.game_instructions_handler);
+            $('#game_start_button').mouseover(self.game_start_over).mouseout(self.game_start_out);
+            $('#game_start_instructions').mouseover(self.game_instructions_over).mouseout(self.game_instructions_out);
+
+            $('.game_layer').hide();
+            $('#game_start_screen').show();
+        };
+
+        self.counter = 3;
+        self.timer;
+
+        self.game_start_out = function() {
+            $('#game_start_button').css('background-color', '#3E3F12')
+        };
+
+        self.game_instructions_out = function() {
+            $('#game_start_instructions').css('background-color', '#3E3F12')
+        };
+            //$('#game_start_instructions').css('background-color', '#3E3F12')
+        self.game_start_over = function() {
+            $('#game_start_button').css('background-color', '#9E6F2E');
+        };
+
+        self.game_instructions_over = function() {
+            $('#game_start_instructions').css('background-color', '#9E6F2E');
+        };
+
+
+        self.game_start_handler = function() {
+            $('.game_layer').hide();
+            $("#game_counter_screen").show();
+            $("#game_counter").html(self.counter);
+
+            self.timer = setInterval(function(){
+                self.counter--;
+                if (self.counter == 0) {
+                    $(".game_layer").hide();
+                    $('#game_canvas').show();
+                    $('#game_score').show();
+                    setInterval(animate, frames_rate);
+                    setInterval(update_score, frames_rate);
+                    setInterval(update_evil, evil_frames_rate);
+                    setInterval(update_happy, happy_frames_rate);
+                    setInterval(update_balloons, balloons_frames_rate);
+                    setInterval(update_background, background_frame_rate);
+                    clearInterval(self.timer)
+                }
+                $("#game_counter").html(self.counter);
+            },1000);
+
+        };
+
+        self.game_instructions_handler = function() {
+            $('#game_instructions').show();
+        };
+        return self;
+    };
+
+    var setup = function() {
+        ui_handler = UIHandler();
+        ui_handler.init();
+
+
+        body = document.getElementById('body');
+        canvas = document.getElementById('game_canvas');
+        canvas.className = "game_layer";
         canvas.width = game_width+50;
         canvas.height = game_height+50;
-
         context = canvas.getContext('2d');
 
-        //body.appendChild(main_div);
-        //main_div.appendChild(canvas);
+        background = Background({
+            assets : background_assets
+        });
+        background.build_frames();
 
         happy = Happy({
             x : util.get_random_int(0,100),
@@ -550,14 +651,15 @@ var Game = (function() {
 
         happy.init();
         happy.build_frames();
+
         add_evils(2);
         add_balloons();
+    };
 
-        setInterval(animate, frames_rate);
-        setInterval(update_score, frames_rate);
-        setInterval(update_evil, evil_frames_rate);
-        setInterval(update_happy, happy_frames_rate);
-        setInterval(update_balloons, balloons_frames_rate);
+    var update_background = function(){
+
+        background_frame = (background_frame+1) % 2;
+
     };
 
     var update_score = function () {
@@ -573,6 +675,7 @@ var Game = (function() {
         var last_target = -1;
         context.clearRect(0,0,canvas.width, canvas.height);
 
+        context.drawImage(background.frames[background_frame], 0, 0);
         context.drawImage(happy.frames[happy_frame], happy.x, happy.y);
         happy.is_a_ball_destroyed(balloons);
         happy.update_position();
@@ -581,15 +684,16 @@ var Game = (function() {
             context.drawImage(evil[i].frames[evil_frame], evil[i].x, evil[i].y);
             last_target = evil[i].search(happy,balloons,last_target);
             evil[i].destroy(happy, balloons, phys);
-        };
+        }
 
 
-        phys.check_collisions(balloons);
         for (var i = 0; i < balloons.length; i++) {
           if (balloons[i].drawable == false) continue;
             context.drawImage(balloons[i].frames[0], balloons[i].x, balloons[i].y);
             balloons[i].update_position();
         }
+        phys.check_collisions(balloons);
+
     };
 
 
@@ -603,12 +707,9 @@ var Game = (function() {
             happy_frame = 1;
         //happy_frame = (happy_frame + 1) % happy.frames.length;
     };
-    var counter_balloons = 0;
 
     var update_balloons = function() {
         var new_ballons = util.get_random_int(1,3);
-        console.log("update_balloons: "+ counter_balloons);
-        counter_balloons++;
         release_balloons();
         var max = (evil[0].balloons_destroyed > evil[1].balloons_destroyed)?(evil[0].balloons_destroyed):(evil[1].balloons_destroyed);
         if ((balloons.length) < 25)
@@ -617,13 +718,10 @@ var Game = (function() {
 
     var add_evils = function(n_evils) {
         n_evils = n_evils || 3;
-        var x;
-        var y;
+        var x = 0;
+        var y = 0;
         var x_temp;
         var y_temp;
-
-        x=0;
-        y=0;
 
         for (var i = 0; i < n_evils; i++) {
             evil.push( Evil({
@@ -634,7 +732,7 @@ var Game = (function() {
                             assets: evil_assets
                             }));
             evil[i].build_frames();
-            console.log("SEM add_evils new (" + evil[i].x + "," + evil[i].y + ")");
+            //console.log("SEM add_evils new (" + evil[i].x + "," + evil[i].y + ")");
             x += 250;
             y += 150;
         };
@@ -675,7 +773,10 @@ var Game = (function() {
         //console.log("SEM add_balloons: " + " new_ballons:" + n_balloons + " len:"  + balloons.length);
     };
 
+    $(window).load(function() {
+        game.setup = setup();
+    });
 
-    game.setup = setup();
+
     return game;
 })(window);

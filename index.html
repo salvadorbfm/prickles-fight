@@ -5,13 +5,25 @@
 </head>
 <body id="body">
 <div id="game_header">
-The Prickles Fight!
+Fight of the Prickles!
 </div>
-<div id="main_div">
-    <canvas id="game_canvas">
-    </canvas>
+<canvas id="game_canvas" class="game_layer">
+</canvas>
+<div id="game_start_screen" class="game_layer">
+    <div id="game_start_button">
+        Start !
+    </div>
+    <p></p>
+    <div id="game_start_instructions">
+        Instructions
+    </div>
+
 </div>
-<div id="game_score">
+<div id="game_counter_screen" class="game_layer">
+    <div id="game_counter">
+    </div>
+</div>
+<div id="game_score" class="game_layer">
     <div id="game_score_container">
         <div id="happy_score">
            Happy:
@@ -23,7 +35,12 @@ The Prickles Fight!
         </div>
     </div>
 </div>
-
+<div id="game_instructions" class="game_layer">
+    The main task is to get the maximum of the balloons. Just click at the point you desire to go and Happy Prickle will do his best. You can keep the mouse down in order to go to that direction.
+</div>
+<div id="contact">
+    @SalvadorBFM
+</div>
 </body>
 	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 	<script src="/js/game_sem.js"></script>

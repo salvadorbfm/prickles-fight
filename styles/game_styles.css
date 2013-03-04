@@ -7,65 +7,139 @@ src: url('CHERI___.TTF');
 font-weight:bold;
 font-stretch: semi-expanded;
 }
-
-#game_container {
-    width: 700px;
-    height: 500px;
-    border: 1px solid black;
+@font-face
+{
+font-family: cheri_light;
+src: url('CHERI___.TTF');
+font-stretch: semi-expanded;
+}
+body {
+    background-color: #C7F464;
 }
 
+#game_canvas {
+    background: url(../js/content/fondo1.png);
+}
 .game_layer {
     margin: 0px auto;
     border: thick solid #444433;
-    background: url(../js/content/fondo1.png);
     display: block;
 }
 
 #game_score {
     width: 700px;
-    height: 90px;
+    height: 100px;
     margin: 0px auto;
-    border: 3px solid #440020;
+    border: 0px solid #440020;
     font-family: cheri_bold;
     font-size: 40px;
+    background-color: #4ECDC4;
 }
 #game_header {
     width: 700px;
-    height: 60px;
+    height: 80px;
     margin: 0px auto;
-    padding-top:10px;
-    padding-bottom:10px;
+    padding-top:20px;
     font-family: cheri_bold;
-    font-size: 45px;
+    font-size: 55px;
     text-align:center;
+    background-color: #FF6B6B;
 }
 
 
-
+#game_score_container, #happy_score, #evil_score {
+    border: 0px solid #440020;
+}
 #game_score_container {
-    width: 420px;
+    width: 520px;
     height: 90px;
     margin: 0px auto;
     padding-top: 10px;
 }
 #happy_score {
-    width:195px;
+    width:215px;
     height: 80px;
     float:left;
-    padding-left:15px;
     padding-top:10px;
+    margin-left:12%;
     display: inline;
 }
 
 #evil_score {
-    width: 195px;
+    width: 215px;
     height: 80px;
     float: left;
-    padding-right:15px;
     padding-top:10px;
     display: inline;
 }
 
 #evil_results, #happy_results {
     color: #AA1111;
+}
+
+
+#game_start_screen {
+    font-family: cheri_bold;
+    width: 700px;
+    height: 500px;
+    background-color: #BBD774;
+    background:
+                url(../js/content/fondo1.png);
+
+}
+#game_counter_screen {
+    width: 700px;
+    height: 500px;
+    background-color: #BBD774;
+
+}
+#game_counter {
+    font-family: cheri_bold;
+    width: 125px;
+    height: 125px;
+    font-size: 120px;
+    margin-left: 310px;
+    margin-top: 180px;
+}
+#game_start_button {
+    margin: 0px auto;
+    margin-top: 140px;
+}
+#game_start_instructions {
+    margin: 0px auto;
+}
+#game_start_button, #game_start_instructions {
+    width: 400px;
+    height: 80px;
+    font-size: 45px;
+    text-align:center;
+    color: #FFFFFF;
+    border: 0px solid #FFFFFF;
+    padding-top: 20px;
+    background-color: #3E3F12;
+    border-radius:25px;
+    box-shadow: 10px 10px 5px #888888;
+}
+
+#game_instructions {
+    font-family: Arial;
+    width: 680px;
+    font-size: 18px;
+    background-color: #9E6F2E;
+    color:#FFFFFF;
+    text-align: center;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border:0px;
+}
+
+#contact {
+    font-family: Arial;
+    font-size: 15px;
+    color:#322020;
+    position: absolute;
+    right:5px;
+    bottom:10px;
 }
