@@ -13,64 +13,113 @@ font-family: cheri_light;
 src: url('CHERI___.TTF');
 font-stretch: semi-expanded;
 }
+html,
 body {
-    background-color: #C7F464;
+   margin: 0;
+    padding: 0;
+}
+
+body {
+    /*background-color: #C7F464;*/
+    background-color: #F1F1DC;
+    font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    line-height: 1.4em;
+    color: #4d4d4d;
+    width: 700px;
+    margin: 0px auto 0px auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-font-smoothing: antialiased;
+    -ms-font-smoothing: antialiased;
+    -o-font-smoothing: antialiased;
+    font-smoothing: antialiased;
+}
+#info {
+    margin: 100px auto;
+    color: #353535;
+    border: 0px solid papayaWhip;
+    font-size: 18px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+    text-align: center;
+}
+
+#info a {
+    color: inherit;
 }
 
 #game_canvas {
-    background: url(../js/content/fondo1.png);
+    position: relative;
 }
 .game_layer {
+    position: relative;
     margin: 0px auto;
-    border: thick solid #444433;
+    border: 1px solid #FFFFFF;
+    border-radius:25px;
     display: block;
+    width: 100%;
+    box-shadow: 5px 5px 5px #888888;
+}
+
+#game_header {
+    /*height: 80px;*/
+    font-family: cheri_bold;
+    font-size: 55px;
+    text-align:center;
+    /*background-color: #FF6B6B;*/
+}
+#game_header h1 {
+    width: 98%;
+    font-size: 55px;
+    font-weight: bold;
+    text-align: center;
+    margin: 50px auto;
+    color: #000000;
+    color: rgba(0,0,0, 0.8);
+    text-shadow: -2px -2px rgba(0, 0, 0, 0.2);
+    -webkit-text-rendering: optimizeLegibility;
+    -moz-text-rendering: optimizeLegibility;
+    -ms-text-rendering: optimizeLegibility;
+    -o-text-rendering: optimizeLegibility;
+    text-rendering: optimizeLegibility;
+}
+
+#game_header h1:hover {
+    text-shadow: 0 0 1px #000,
+                 0 0 10px rgba(199, 107, 107, 0.8);
+    -webkit-transform: scale(1.1);
+    -moz-transform: scale(1.1);
+    -ms-transform: scale(1.1);
+    -o-transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 #game_score {
-    width: 700px;
     height: 100px;
-    margin: 0px auto;
+    width: 100%;
+    margin-top: 6px;
     border: 0px solid #440020;
     font-family: cheri_bold;
     font-size: 40px;
     background-color: #4ECDC4;
 }
-#game_header {
-    width: 700px;
-    height: 80px;
-    margin: 0px auto;
-    padding-top:20px;
-    font-family: cheri_bold;
-    font-size: 55px;
-    text-align:center;
-    background-color: #FF6B6B;
-}
-
-
-#game_score_container, #happy_score, #evil_score {
-    border: 0px solid #440020;
-}
-#game_score_container {
-    width: 520px;
-    height: 90px;
-    margin: 0px auto;
-    padding-top: 10px;
-}
-#happy_score {
-    width:215px;
-    height: 80px;
-    float:left;
-    padding-top:10px;
-    margin-left:12%;
+#happy_score, #evil_score {
     display: inline;
-}
-
-#evil_score {
-    width: 215px;
     height: 80px;
     float: left;
-    padding-top:10px;
-    display: inline;
+    position: relative;
+    top:42%;
+    border: 0px solid #440020;
+    color: #000000;
+
+}
+#happy_score {
+    padding-left: 23%;
+    right: 0px;
+    margin:auto 0px auto auto;
+}
+#evil_score {
+    padding-left: 7%;
+    left: 2px;
+    margin:auto auto auto 0px;
 }
 
 #evil_results, #happy_results {
@@ -84,14 +133,16 @@ body {
     height: 500px;
     background-color: #BBD774;
     background:
-                url(../js/content/fondo1.png);
+                url(../js/content/happy_right.png) 25px 45px no-repeat,
+                url(../js/content/evil_left.png) 580px 335px no-repeat,
+                url(../js/content/fondo1.png) 0px 0px no-repeat;
+    box-shadow: 10px 10px 5px #888888;
 
 }
 #game_counter_screen {
     width: 700px;
     height: 500px;
     background-color: #BBD774;
-
 }
 #game_counter {
     font-family: cheri_bold;
@@ -110,15 +161,20 @@ body {
 }
 #game_start_button, #game_start_instructions {
     width: 400px;
-    height: 80px;
+    height: 100px;
     font-size: 45px;
     text-align:center;
     color: #FFFFFF;
-    border: 0px solid #FFFFFF;
-    padding-top: 20px;
     background-color: #3E3F12;
     border-radius:25px;
     box-shadow: 10px 10px 5px #888888;
+    padding-bottom: 13px;
+}
+#game_start_button span, #game_start_instructions span{
+    position: relative;
+    top: 50%;
+    margin: 20px auto 20px auto;
+    text-shadow: 2px 5px 0 rgba(62, 63, 18, 0.7);
 }
 
 #game_instructions {
@@ -137,9 +193,9 @@ body {
 
 #contact {
     font-family: Arial;
-    font-size: 15px;
+    font-size: 20px;
     color:#322020;
     position: absolute;
-    right:5px;
-    bottom:10px;
+    right:15px;
+    bottom:15px;
 }
