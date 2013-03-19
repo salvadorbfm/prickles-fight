@@ -1,63 +1,97 @@
-var Game = (function() {
+/*
+      ______ _       _     _            __   _______ _            _____      _      _    _           _
+ |  ____(_)     | |   | |          / _| |__   __| |          |  __ \    (_)    | |  | |         | |
+ | |__   _  __ _| |__ | |_    ___ | |_     | |  | |__   ___  | |__) | __ _  ___| | _| | ___  ___| |
+ |  __| | |/ _` | '_ \| __|  / _ \|  _|    | |  | '_ \ / _ \ |  ___/ '__| |/ __| |/ / |/ _ \/ __| |
+ | |    | | (_| | | | | |_  | (_) | |      | |  | | | |  __/ | |   | |  | | (__|   <| |  __/\__ \_|
+ |_|    |_|\__, |_| |_|\__|  \___/|_|      |_|  |_| |_|\___| |_|   |_|  |_|\___|_|\_\_|\___||___(_)
+            __/ |
+           |___/
+
+           Code by Salvador Elizarraras Montenegro
+                   @SalvadorBFM
+           Art  by Arturo Elizarraras Montenegro
+                   @sagitarioaem
+
+           2013
+
+*/
+(function(undefined) {
 
 
     var game = [];
-    var game_width = 700;
-    var game_height = 500;
-    var canvas = null;
-    var context = null;
-    var ui_handler = null;
+        game_width = 700,
+        game_height = 500,
+        canvas = null,
+        context = null,
+        ui_handler = null;
+
     var happy_assets = [
                         '/js/content/happy_right.png',
-                        '/js/content/happy_left.png'
+                        '/js/content/happy_right_attacked.png',
+                        '/js/content/happy_left.png',
+                        '/js/content/happy_left_attacked.png'
                        ];
-    var evil_assets = [
-                       '/js/content/evil_right.png',
-                       '/js/content/evil_left.png'
-                      ];
-    var balloons_assets = [
+        evil_assets = ['/js/content/evil_right.png',
+                       '/js/content/evil_left.png'],
+        balloons_assets = [
                            ['/js/content/balloon1.png'],
                            ['/js/content/balloon2.png'],
                            ['/js/content/balloon3.png'],
                            ['/js/content/balloon4.png'],
                            ['/js/content/balloon5.png'],
                            ['/js/content/balloon6.png']
-                          ];
-    var bomb_assets = ['/js/content/bomb1.png',
+                          ],
+        bomb_assets = ['/js/content/bomb1.png',
                        '/js/content/bomb2.png',
-                       '/js/content/bomb_exp.png'];
+                       '/js/content/bomb_exp.png'],
 
-    var background_assets = ['../js/content/fondo1.png',
-                             '../js/content/fondo2.png'];
+        background_assets = ['../js/content/fondo1.png',
+                             '../js/content/fondo2.png'],
 
-    var frames_rate = 1000/30;
-    var happy_frames_rate = 1000/2;
-    var evil_frames_rate = 1000/2;
-    var bomb_frame_rate = 1000/2;
-    var background_frame_rate = 1000;
-    var balloons_frames_rate = 2000;
-    var collisions_frame_rate = 500;
+        winner_assets = ['../js/content/win_happy.png',
+                         '../js/content/win_evil.png'];
+
+    var frames_rate = 1000/30,
+        happy_frames_rate = 1000/2,
+        evil_frames_rate = 1000/2,
+        bomb_frame_rate = 1000/2,
+        background_frame_rate = 1000,
+        balloons_frames_rate = 2000,
+        collisions_frame_rate = 500;
 
 
-    var evil_frame = 0;
-    var happy_frame = 0;
-    var background_frame = 0;
+    var evil_frame = 0,
+        happy_frame = 0,
+        background_frame = 0;
 
-    var evil = [];
-    var happy;
-    var balloons= [];                                      // A lot of balloons
-    var bomb = [];
-    var background;
+    var evils = [],
+        happy,
+        balloons= [],                                      // A lot of balloons
+        bomb = [],
+        background;
 
-    var Background = function(config) {
+    var state = {
+                        "on_hold":0,
+                        "playing":1,
+                        "draw" : 2,
+                        "happy_wins": 3,
+                        "evil_wins" : 4
+    };
+
+    var game_state = state.onhold;
+
+    var BaseSprite = function(config) {
         config = config || {};
         var self = {};
-
-        self.x = config.x || 0;
-        self.y = config.y || 0;
-
-        self.frames = [];
         self.assets = config.assets || [];
+        self.frames = [];
+        self.frame = 0;
+        self.type = config.type || "";
+        self.x = config.x || 0.0;
+        self.y = config.y || 0.0;
+        self.RGB = config.RGB || [200,200,200];
+        self.drawable = false;
 
         self.build_frames = function()
         {
@@ -67,20 +101,24 @@ var Game = (function() {
               self.frames[i].onload = self.onImageLoad;
             }
         }
+
         self.onImageLoad = function(){
             //console.log("IMAGE!!!");
         };
 
         return self;
     };
+
+    var Background = function(config) {
+        config = config || {};
+        var self = BaseSprite(config);
+        return self;
+    };
+
     var Sprite = function(config){
         config = config || {};
-        var self = {};
+        var self = BaseSprite(config);
 
-        //self.image = loadImage("content/happy_left.png");
-
-        self.x = config.x || 0.0;
-        self.y = config.y || 0.0;
 
         self.width = config.width || 20.0;
         self.height = config.height || 20.0;
@@ -91,36 +129,19 @@ var Game = (function() {
         self.direction_x = config.direction_y || 1.0;
         self.direction_y = config.direction_y || 1.0;
 
-        self.RGB = config.RGB || [200,200,200];
-
-        self.drawable = false;
-
         self.balloons_destroyed = 0;
 
         self.is_collision = false;
-        self.last_collision_with = -1;
 
-        self.assets = config.assets || [];
-        self.frames = [];
-        self.frame = 0;
+        self.last_collision_with = -1;
+        self.was_attacked = false;                   // For main characters
+        self.has_died = false;                       // For main characters
 
         self.init = function() {
             self.drawable = true;
+            self.was_attacked = false;
             self.frame = 0;
         };
-        self.build_frames = function()
-        {
-            for (var i = 0; i < self.assets.length; i++) {
-              self.frames.push(new Image());
-              self.frames[i].src = self.assets[i];
-              self.frames[i].onload = self.onImageLoad;
-            }
-        }
-
-        self.onImageLoad = function(){
-            //console.log("IMAGE!!!");
-        };
-
 
         self.get_center_x = function(){
             return self.x + self.width/2.0;
@@ -210,10 +231,7 @@ var Game = (function() {
     };
 
     /*
-        Bomb is an extra elemento in the game, this intends to explotes
-        and affects as Evil as Happy.
-        TODO: Create a timer of 3 seconds
-
+        Bomb is an extra elemento in the game that explodes and affects both happy and evils.
     */
     var Bomb = function(config) {
         config = config || {};
@@ -221,6 +239,7 @@ var Game = (function() {
 
         self = Sprite(config);
         self.has_exploited = false;
+        self.release_time_started = false;
 
         self.init = function () {
             self.x = util.get_random_int(0,game_width-50);
@@ -234,18 +253,44 @@ var Game = (function() {
             }, 10000);
             self.frame = 0;
             self.drawable = true;
+            self.release_time_started = false;
         };
 
         self.set_release_time = function() {
+            self.release_time_started = true;
             setTimeout(function(){
                 console.log("Stop drawing the BOMB now!");
                 self.drawable = false;
             }, 1000);
-        }
+        };
+
+        self.destroy_when_explosion = function(_array) {
+            _array = _array || null;
+            if (self.has_exploited == false || _array == null) return;
+
+            for (var i = 0; i < _array.length; i++) {
+                if (phys.check_collision(self, _array[i]) == true) {
+                    _array[i].was_attacked = true;
+                    if (_array[i].type === "balloon") {
+                        _array[i].drawable = false;
+                    }
+                    else {
+                        _array[i].lives.pop();
+                    }
+                }
+            }
+        };
 
 
         return self;
     };
+
+    // ********************** Main Characters *************************************
+    // TODO: Have a generic template for a user controlled character
+    // TODO: Think in one especial power for both of them.
+    /*
+        Happy is one of the main characters in the game.
+    */
     var Happy = function(config){
         var self = {};
 
@@ -254,6 +299,7 @@ var Game = (function() {
         self.x_mouse = 0;
         self.y_mouse = 0;
         self.down=false;
+        self.lives = [true, true, true, true, true];
 
         self.init = function(){
             $('#game_canvas').mousemove(self.mouse_move_handler);
@@ -263,6 +309,7 @@ var Game = (function() {
 
             //$('body').keypress(self.keypress_handler);
             self.drawable = true;
+            self.lives = [true, true, true, true, true];
         };
 
         self.keypress_handler = function(ev) {
@@ -321,7 +368,7 @@ var Game = (function() {
 
             for (var i = 0; i < sprites.length; i++) {
                 if (sprites[i].drawable == false) continue;
-                if (phys.check_collision( self, sprites[i])){
+                if (phys.check_collision( self, sprites[i]) ){
                     sprites[i].drawable = false;
                     self.balloons_destroyed++;
                 }
@@ -346,6 +393,9 @@ var Game = (function() {
         return self;
     };
 
+    /*
+        Evil is one of the main characters in the game, this guy is a badass.
+    */
     var Evil = function(config){
         var self = {};
         var util = Util();
@@ -354,7 +404,7 @@ var Game = (function() {
         self = Sprite(config);
 
         self.sprite_target = config.sprite_target || -1;
-
+        self.lives = [true, true, true, true, true];
 
         // search(happy,sprites)
         // This function looks for the closest sprite
@@ -416,7 +466,7 @@ var Game = (function() {
             var phys = phys || {};
 
             if(self.sprite_target >= 0) {
-                if( phys.check_collision( self, sprites[self.sprite_target]) )
+                if( phys.check_collision( self, sprites[self.sprite_target] ) )
                 {
                     sprites[self.sprite_target].drawable = false;
                     self.balloons_destroyed++;
@@ -428,7 +478,10 @@ var Game = (function() {
 
         return self;
     };
+    // ********************** End of Main Characters *******************************
 
+    /* Util Class
+       This class stores a collection of useful geometric functions. */
     var Util = function()
     {
         var self = {};
@@ -504,39 +557,62 @@ var Game = (function() {
         }
         return self;
     };
+
+
     var Phys = function(config){
         config = config || {};
 
         var self = {};
         var util = Util();
 
-        // Checking collision between two sprites
-        self.check_collision = function(spriteA, spriteB){
-            var spriteA = spriteA || null;  // Here, I should check the error of having a "null" sprite
-            var spriteB = spriteB || null;
-            var radA = 0;
-            var radB = 0;
-            var centerA = {};
-            var centerB = {};
-            var magnitude = 0;
+        self.check_collision_with_array = function(a, _array) {
+            a = a || null;
+            _array = _array || null;
+            if ( (_array instanceof Array) == false ) {
+                return false;
+            }
+            if (a == null || spritesB == null) return false;
+            var radA = 0,
+                radB = 0,
+                centerA = {},
+                centerB = {},
+                magnitude = 0;
 
-            if (spriteA == null && spriteB == null) return false;
+            for (var i = 0; i < _array.length; i++) {
+                if (self.check_collision(a, _array[i]) == true) {
+                    console.log("");
+                }
+            }
+
+            return false;
+        };
+        // Checking collision between two sprites or between a sprite and an Array of Sprites
+        self.check_collision = function(spriteA, spriteB) {
+            spriteA = spriteA || null;
+            spriteB = spriteB || null;
+            if (spriteA == null || spriteB == null) return false;
+            var radA = 0,
+                radB = 0,
+                centerA = {},
+                centerB = {},
+                magnitude = 0;
 
             radA = (spriteA.width/2.0);
-            radB = (spriteB.width/2.0);
             centerA = {x:spriteA.get_center_x(), y:spriteA.get_center_y()};
+            radB = (spriteB.width/2.0);
             centerB = {x:spriteB.get_center_x(), y:spriteB.get_center_y()};
-
             magnitude = util.get_magnitude(centerA,centerB);
 
             return self.has_collided(magnitude, radA, radB);
         };
+
         self.has_collided = function(magnitude, radA, radB){
-            if ( (magnitude+10) < (radA + radB))
+            if ( (magnitude+10) < (radA + radB) )
                 return true;
             return false;
         };
-        self.check_collision_by_points = function(x, y, width, happy, sprites, evil) {
+
+        self.check_collision_by_points = function(x, y, width, happy, sprites, evils) {
             var radA;
             var radB;
             var centerA;
@@ -555,9 +631,9 @@ var Game = (function() {
                     return true;
 
             // Checking with evils
-            for (var i=0; i<evil.length; i++) {
-                radB = evil[i].width/2;
-                centerB = {x:evil[i].get_center_x(), y:evil[i].get_center_y()};
+            for (var i=0; i<evils.length; i++) {
+                radB = evils[i].width/2;
+                centerB = {x:evils[i].get_center_x(), y:evils[i].get_center_y()};
                 magnitude = util.get_magnitude(centerA,centerB);
                 if (self.has_collided(magnitude, radA, radB) == true)
                     return true;
@@ -577,40 +653,36 @@ var Game = (function() {
         };
 
         // For each balloon, checks if there is a collision.
-        self.check_collisions = function(sprites){
+        self.check_collisions = function(sprites) {
             sprites = sprites || new Array();
             var is_changed = util.get_filled_array(sprites.length, false);
 
-            for (var i=0; i<sprites.length; i++){
+            for (var i=0; i<sprites.length; i++) {
                 if (is_changed[i] == true) continue;
                 if (sprites[i].drawable == false) continue;
-                if (sprites[i].last_collision_with == j) {
-                  //debugger;
-                  continue;
-                }
+                if (sprites[i].last_collision_with == j) continue;
 
-                for (var j=0; j<sprites.length; j++){
-                    // ************************************************** TODO
-                    // ************************* Oopps!
-                    // This is not working, I need to save the last state and avoid repeated collisions ...
+                for (var j=0; j<sprites.length; j++) {
                     if (is_changed[i] == true || i==j ) continue;
                     if (sprites[j].drawable == false) continue;
                     if (sprites[j].last_collision_with == i) continue;
 
-                    if (self.check_collision(sprites[i],sprites[j])){
+                    if ( self.check_collision(sprites[i], sprites[j]) ) {
                         sprites[i].is_collision = true;
-                        sprites[i].last_collision_with = j;
                         sprites[j].is_collision = true;
+                        sprites[i].last_collision_with = j;
                         sprites[j].last_collision_with = i;
                         is_changed[j] = true;
                         is_changed[i] = true;
                     }
                 }
             }
+
             for (var i = 0; i < is_changed.length; i++) {
                 if (is_changed[i] == false)
                     sprites[i].last_collision_with = -1;
             };
+
         };
 
         return self;
@@ -658,26 +730,33 @@ var Game = (function() {
             $("#game_counter_screen").show();
             $("#game_counter").html(self.counter);
 
-            self.timer = setInterval(function(){
+
+            self.timer = safe_interval(function(){
                 self.counter--;
                 if (self.counter == 0) {
                     $(".game_layer").hide();
                     $('#game_canvas').show();
                     $('#game_score').show();
+                    game_state = state.playing;
                     start_game();
-                    setInterval(animate, frames_rate);
-                    setInterval(update_score, frames_rate);
-                    setInterval(update_evil, evil_frames_rate);
-                    setInterval(update_bomb, bomb_frame_rate);
-                    setInterval(update_happy, happy_frames_rate);
-                    setInterval(update_balloons, balloons_frames_rate);
-                    setInterval(update_bombs, 20000);                        // Fixing
-                    setInterval(update_background, background_frame_rate);
-                    clearInterval(self.timer)
+                    self.start_game_intervals();
+                    //clearInterval(self.timer); // TODO: safe_clear_interval()
                 }
                 $("#game_counter").html(self.counter);
-            },1000);
+            }, 1000);
 
+        };
+
+        self.start_game_intervals = function() {
+            safe_interval(animate, frames_rate);
+            safe_interval(update_score, frames_rate);
+            safe_interval(update_lives, frames_rate);
+            safe_interval(update_evil, evil_frames_rate);
+            safe_interval(update_bomb, bomb_frame_rate);
+            safe_interval(update_happy, happy_frames_rate);
+            safe_interval(update_balloons, balloons_frames_rate);
+            safe_interval(update_bombs, 12000);                        // Fixing
+            safe_interval(update_background, background_frame_rate);
         };
 
         self.game_instructions_handler = function() {
@@ -690,6 +769,8 @@ var Game = (function() {
         };
         return self;
     };
+
+
 
     var setup = function() {
         ui_handler = UIHandler();
@@ -730,26 +811,15 @@ var Game = (function() {
         add_bombs(1);
     }
 
-    var update_background = function(){
-
-        background_frame = (background_frame+1) % 2;
-
-    };
-
-    var update_score = function () {
-        var total_destroyed = 0;
-        for (var i = 0; i < evil.length; i++) {
-            total_destroyed += evil[i].balloons_destroyed;
-        };
-        $("#evil_results").html( total_destroyed.toString() );
-        $("#happy_results").html(happy.balloons_destroyed.toString());
-    };
-
     var animate = function() {
         var last_target = -1;
         context.clearRect(0,0,canvas.width, canvas.height);
 
         context.drawImage(background.frames[background_frame], 0, 0);
+
+        check_happy_lives();
+        check_evil_lives();
+        check_end_of_game();
 
         //********************** Bombs Drawing and Updating ************************
         for (var i=0; i < bomb.length; i++) {
@@ -760,29 +830,14 @@ var Game = (function() {
                 else {
                     context.drawImage(bomb[i].frames[bomb[i].frame], bomb[i].x, bomb[i].y);
                 }
-                if (bomb[i].has_exploited == true) {
+                if (bomb[i].has_exploited == true && bomb[i].release_time_started == false) {
+                    bomb[i].destroy_when_explosion(balloons);
+                    bomb[i].destroy_when_explosion([happy,evils[0]]); // This will need support for multiplayer
                     bomb[i].set_release_time();
                 }
             }
         };
         //**********************          END               ************************
-
-
-        //********************** Happy Drawing and Updating ************************
-        context.drawImage(happy.frames[happy_frame], happy.x, happy.y);
-        happy.is_a_ball_destroyed(balloons);
-        happy.update_position();
-        //**********************          END               ************************
-
-
-        //********************** Evil Drawing and Updating ************************
-        for (var i = 0; i < evil.length; i++) {
-            context.drawImage(evil[i].frames[evil_frame], evil[i].x, evil[i].y);
-            last_target = evil[i].search(happy,balloons,last_target);
-            evil[i].destroy(happy, balloons, phys);
-        }
-        //**********************          END               ************************
-
         //******************* Balloons Drawing and Updating ************************
         for (var i = 0; i < balloons.length; i++) {
           if (balloons[i].drawable == false) continue;
@@ -792,17 +847,98 @@ var Game = (function() {
         phys.check_collisions(balloons);
         //**********************          END               ************************
 
+
+        //********************** Happy Drawing and Updating ************************
+        context.drawImage(happy.frames[happy_frame], happy.x, happy.y);
+        happy.is_a_ball_destroyed(balloons);
+        happy.update_position();
+        //**********************          END               ************************
+
+        //********************** Evil Drawing and Updating ************************
+        for (var i = 0; i < evils.length; i++) {
+            context.drawImage(evils[i].frames[evil_frame], evils[i].x, evils[i].y);
+            last_target = evils[i].search(happy,balloons,last_target);
+            evils[i].destroy(happy, balloons, phys);
+        }
+        //**********************          END               ************************
     };
 
+    var safe_interval = function ( _funct, _time){
+        if (typeof(_funct) != "function")
+            return ;
+        if (_time <= 0)
+            return ;
+
+        (function interval(){
+            _funct();
+            setTimeout(interval, _time);
+        })();
+    };
+
+    var check_happy_lives = function() {
+        if (happy.lives.length === 0) {
+            happy.has_died = true;
+        }
+    };
+
+    var check_evil_lives = function() {
+        for (var i = 0; i < evils.length; i++) {
+            if (evils[i].lives.length === 0) {
+                evils[i].has_died = true;
+            }
+        };
+    };
+
+    var check_end_of_game = function() {
+
+    };
+
+    var update_background = function(){
+
+        background_frame = (background_frame+1) % 2;
+
+    };
+
+    var update_score = function () {
+        var total_destroyed = 0;
+        for (var i = 0; i < evils.length; i++) {
+            total_destroyed += evils[i].balloons_destroyed;
+        };
+        $("#evil_results").html( total_destroyed.toString() );
+        $("#happy_results").html(happy.balloons_destroyed.toString());
+    };
+    var update_lives = function() {
+        var view = {
+            lives: happy.lives
+        };
+        var output = "{{#lives}} <div class='heart'></div> {{/lives}}";
+        var html = Mustache.to_html(output, view);
+        $('#happy_lives').html(html);
+
+        view = {
+            lives: evils[0].lives        // Need support
+        };
+        output = "{{#lives}} <div class='heart'></div> {{/lives}}";
+        html = Mustache.to_html(output, view);
+        $('#evil_lives').html(html);
+
+
+    };
 
     var update_evil = function() {
-        evil_frame = (evil_frame + 1) % evil[0].frames.length;
+        evil_frame = (evil_frame + 1) % evils[0].frames.length;
     };
     var update_happy = function() {
+        var offset = 0;
+        if (happy.was_attacked === true) {
+            offset = 1;
+            happy.was_attacked = false;
+        }
         if (happy.direction_x > 0)
-            happy_frame = 0;
+            happy_frame = 0 + offset;
         else
-            happy_frame = 1;
+            happy_frame = 2 + offset;
+
         //happy_frame = (happy_frame + 1) % happy.frames.length;
     };
 
@@ -815,20 +951,20 @@ var Game = (function() {
         }
     };
 
-    /* update_ballons is binded to a setInterval and this function handles the way
+    /* update_ballons is binded to a safe_interval and this function handles the way
      of how balloons are added to the game */
     var update_balloons = function() {
         var new_ballons = util.get_random_int(1,3);
         var max = 0;
 
         trim_array(balloons);
-        if (evil.length > 1)
-            max = (evil[0].balloons_destroyed > evil[1].balloons_destroyed)?(evil[0].balloons_destroyed):(evil[1].balloons_destroyed);
+        if (evils.length > 1)
+            max = (evils[0].balloons_destroyed > evils[1].balloons_destroyed)?(evils[0].balloons_destroyed):(evils[1].balloons_destroyed);
         if ((balloons.length) < 25)
             add_balloons(4);
     };
 
-    /* update_bombs is binded to a setInterval and this function handles the way
+    /* update_bombs is binded to a safe_interval and this function handles the way
      of how balloons are added to the game */
     var update_bombs = function() {
         //trim_array(bomb);
@@ -840,14 +976,14 @@ var Game = (function() {
         var y = 0;
 
         for (var i = 0; i < n_evils; i++) {
-            evil.push( Evil({
+            evils.push( Evil({
                             x : util.get_random_int(x,x+200),
                             y : util.get_random_int(y,y+200),
                             width : 70.0,
                             height : 70.0,
                             assets: evil_assets
                             }));
-            evil[i].build_frames();
+            evils[i].build_frames();
             x += 250;
             y += 150;
         };
@@ -890,9 +1026,10 @@ var Game = (function() {
             do {
                 x = util.get_random_int(0,game_width);
                 y = util.get_random_int(0,game_height);
-            }while ( phys.check_collision_by_points(x, y, 50.0, happy, balloons, evil) == true);
+            }while ( phys.check_collision_by_points(x, y, 50.0, happy, balloons, evils) == true);
 
             balloons.push( Sprite({
+              type: "balloon",
               x : x,
               y : y,
               direction_x : (util.get_random_int(0,10) > 5)?1.0:-1.0,
@@ -915,4 +1052,4 @@ var Game = (function() {
 
 
     return game;
-})(window);
+})();
