@@ -24,26 +24,28 @@
         game_height = 500,
         canvas = null,
         context = null,
-        ui_handler = null;
+        ui_handler = null,
+        timer_handler = null;
 
     var happy_assets = [
                         '/js/content/happy_right.png',
                         '/js/content/happy_right_attacked.png',
                         '/js/content/happy_left.png',
                         '/js/content/happy_left_attacked.png'
-                       ];
+                       ],
+
         evil_assets = ['/js/content/evil_right.png',
                        '/js/content/evil_left.png'],
-        balloons_assets = [
-                           ['/js/content/balloon1.png'],
+        balloons_assets = [['/js/content/balloon1.png'],
                            ['/js/content/balloon2.png'],
                            ['/js/content/balloon3.png'],
                            ['/js/content/balloon4.png'],
                            ['/js/content/balloon5.png'],
-                           ['/js/content/balloon6.png']
-                          ],
-        bomb_assets = ['/js/content/bomb1.png',
-                       '/js/content/bomb2.png',
+                           ['/js/content/balloon6.png']],
+        bomb_assets = ['/js/content/bomb1_right.png',
+                       '/js/content/bomb1_left.png',
+                       '/js/content/bomb2_right.png',
+                       '/js/content/bomb2_left.png',
                        '/js/content/bomb_exp.png'],
 
         background_assets = ['../js/content/fondo1.png',
@@ -75,9 +77,12 @@
                         "on_hold":0,
                         "playing":1,
                         "draw" : 2,
-                        "happy_wins": 3,
-                        "evil_wins" : 4
+                        "limit_reached":3,
+                        "happy_wins": 4,
+                        "evil_wins" : 5
     };
+
+    var limit = 600;
 
     var game_state = state.onhold;
 
@@ -240,6 +245,7 @@
         self = Sprite(config);
         self.has_exploited = false;
         self.release_time_started = false;
+        self.time = config.time || 10000;
 
         self.init = function () {
             self.x = util.get_random_int(0,game_width-50);
@@ -248,9 +254,9 @@
             self.has_exploited = false;
             setTimeout(function(){
                 console.log("Bomb has exploited!!");
-                self.frame = 2;
+                //self.frame = 2;
                 self.has_exploited = true;
-            }, 10000);
+            }, self.time);
             self.frame = 0;
             self.drawable = true;
             self.release_time_started = false;
@@ -419,8 +425,8 @@
             min = 99999.0;
 
             self.sprite_target = -1;
-            self.speed_x = util.get_random(4.0,6.0);
-            self.speed_y = util.get_random(4.0,6.0);
+            self.speed_x = util.get_random(3.0,5.0);
+            self.speed_y = util.get_random(3.0,5.0);
             for (var i = sprites.length - 1; i >= 0; i--) {
                 if(sprites[i].drawable == false) continue;
 
@@ -731,7 +737,7 @@
             $("#game_counter").html(self.counter);
 
 
-            self.timer = safe_interval(function(){
+            self.timer = timer_handler.safe_interval(function(){
                 self.counter--;
                 if (self.counter == 0) {
                     $(".game_layer").hide();
@@ -748,15 +754,15 @@
         };
 
         self.start_game_intervals = function() {
-            safe_interval(animate, frames_rate);
-            safe_interval(update_score, frames_rate);
-            safe_interval(update_lives, frames_rate);
-            safe_interval(update_evil, evil_frames_rate);
-            safe_interval(update_bomb, bomb_frame_rate);
-            safe_interval(update_happy, happy_frames_rate);
-            safe_interval(update_balloons, balloons_frames_rate);
-            safe_interval(update_bombs, 12000);                        // Fixing
-            safe_interval(update_background, background_frame_rate);
+            timer_handler.safe_interval(animate, frames_rate, "animate");
+            timer_handler.safe_interval(update_score, frames_rate, "update_score");
+            timer_handler.safe_interval(update_lives, frames_rate, "update_lives");
+            timer_handler.safe_interval(update_evil, evil_frames_rate, "update_evil");
+            timer_handler.safe_interval(update_bomb, bomb_frame_rate, "update_bomb");
+            timer_handler.safe_interval(update_happy, happy_frames_rate, "update_happy");
+            timer_handler.safe_interval(update_balloons, balloons_frames_rate, "update_balloons");
+            timer_handler.safe_interval(update_bombs, 12000, "update_bombs");                        // Fixing
+            timer_handler.safe_interval(update_background, background_frame_rate, "update_background");
         };
 
         self.game_instructions_handler = function() {
@@ -775,6 +781,8 @@
     var setup = function() {
         ui_handler = UIHandler();
         ui_handler.init();
+
+        timer_handler = TimeHandler();
 
 
         body = document.getElementById('body');
@@ -796,8 +804,8 @@
             y : util.get_random_int(350,500),
             width : 70.0,
             height : 70.0,
-            speed_x : util.get_random(8.0,10.0),
-            speed_y : util.get_random(8.0,10.0),
+            speed_x : util.get_random(9.0,11.0),
+            speed_y : util.get_random(9.0,11.0),
             direction_x : util.get_random(-1.0,1.0),
             direction_y : util.get_random(-1.0,1.0),
             assets: happy_assets
@@ -808,7 +816,7 @@
 
         add_evils(1);
         add_balloons();
-        add_bombs(1);
+        add_bombs(4);
     }
 
     var animate = function() {
@@ -824,7 +832,7 @@
         //********************** Bombs Drawing and Updating ************************
         for (var i=0; i < bomb.length; i++) {
             if (bomb[i].drawable == true) {
-                if (bomb[i].frame == 2) {// Explosion
+                if (bomb[i].frame == 4) {// Explosion
                     context.drawImage(bomb[i].frames[bomb[i].frame], bomb[i].x, bomb[i].y, bomb[i].width*1.5, bomb[i].height*1.5);
                 }
                 else {
@@ -863,16 +871,37 @@
         //**********************          END               ************************
     };
 
-    var safe_interval = function ( _funct, _time){
-        if (typeof(_funct) != "function")
-            return ;
-        if (_time <= 0)
-            return ;
+    /* TimeHandler is a class that handles the safe_interval function.
+       Work around for clearInterval:
+            Since we have a "safe interval" we need a way to clear this safe interval,
+            for this purpose, we need to call like:
+                time_handler.safe_interval( myfunc, time, "myfunc")
+            and clear the interval with:
+                time_handler.running_functions["myfunc"] = false
+    */
+    var TimeHandler = function(config) {
+        config = config || {};
+        var self = {};
 
-        (function interval(){
-            _funct();
-            setTimeout(interval, _time);
-        })();
+        self.running_functions = {};
+        self.safe_interval  = function ( _funct, _time, _name){
+            if (typeof(_funct) != "function")
+                return ;
+            if (_time <= 0)
+                return ;
+
+            self.running_functions[_name] = true;
+            (function interval(){
+                if ( self.running_functions[_name] === false )
+                    return;
+                _funct();
+                setTimeout(interval, _time);
+            })();
+        };
+        self.kill_all_intervals = function() {
+            //for (var obj)
+        }
+        return self;
     };
 
     var check_happy_lives = function() {
@@ -889,8 +918,24 @@
         };
     };
 
+    /* check_end_of_game() Decides if the has ended and trigger the end events */
     var check_end_of_game = function() {
 
+        if (happy.has_died == true && evils[0].has_died == true) { // Needs support
+            game_state = state.draw;
+        }else if (happy.has_died == true) {
+            game_state = state.evil_wins;
+        }else if (evils[0].has_died == true) {                     // Needs support
+            game_state = state.happy_wins;
+        }else if (game_state === state.limit_reached) {                     // Needs support
+            game_state = (happy.balloons_destroyed > evils[0]) ? (state.happy_wins):(state.evil_wins);
+        }else {
+            return ;
+        }
+
+        if (game_state) {
+
+        }
     };
 
     var update_background = function(){
@@ -944,9 +989,14 @@
 
     /*  update_bomb is for handling the frame change*/
     var update_bomb = function() {
+        var offset = 0;
         for (var i = 0; i < bomb.length; i++) {
-            if (bomb[i].drawable == true && bomb[i].has_exploited == false) {
-                bomb[i].frame = (bomb[i].frame + 1) % 2;
+            if (bomb[i].drawable == true) {
+                if (bomb[i].has_exploited == true) {
+                    bomb[i].frame = 4;
+                    continue;
+                }
+                bomb[i].frame = ((bomb[i].frame + 1) % 2) + offset;
             }
         }
     };
@@ -968,7 +1018,7 @@
      of how balloons are added to the game */
     var update_bombs = function() {
         //trim_array(bomb);
-        add_bombs(1);
+        add_bombs(4);
     };
     var add_evils = function(n_evils) {
         n_evils = n_evils || 3;
@@ -997,8 +1047,9 @@
 
         for (var i=0; i<n; i++) {
             bomb_obj = Bomb({
-                        width : 60,
-                        height : 60,
+                        width : 80,
+                        height : 80,
+                        time : util.get_random_int(5000, 8000),
                         assets: bomb_assets
             });
             bomb.push(bomb_obj);
@@ -1020,7 +1071,21 @@
         var y;// = util.get_random_int(0, game_height);
         n_balloons = n_balloons || util.get_random_int(5,10);
 
+        // Balloons limit has been reached, time to see who wins!
+        if (limit === 0) {
+            game_state = state.limit_reached;
+            return ;
+        }
 
+        // We need to get just the necessary balloons
+        if (n_balloons > limit) {
+            n_balloons = util.get_random_int(1, limit);
+        }
+
+        // update limit
+        limit -= n_balloons;
+
+        // Add new balloons
         current_index = balloons.length;
         for (var i = 0; i < n_balloons; i++) {
             do {
@@ -1043,7 +1108,6 @@
             balloons[current_index + i].build_frames();
             balloons[current_index + i].init();
         }
-        //console.log("SEM add_balloons: " + " new_ballons:" + n_balloons + " len:"  + balloons.length);
     };
 
     $(window).load(function() {
