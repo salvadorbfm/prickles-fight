@@ -992,7 +992,7 @@
         }else if (evils[0].has_died == true) {                     // Needs support
             game_state = state.happy_wins;
         }else if (limit <= 0 && util.get_drawables(balloons) === 0) {                     // Needs support
-            game_state = (happy.balloons_destroyed > evils[0]) ? (state.happy_wins):(state.evil_wins);
+            game_state = (happy.balloons_destroyed > evils[0].balloons_destroyed) ? (state.happy_wins):(state.evil_wins);
         }else {
             return ;
         }
