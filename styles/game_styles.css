@@ -212,7 +212,7 @@ body {
 }
 
 #game_score {
-    height: 130px;
+    height: 170px;
     width: 100%;
     margin-top: 6px;
     border: 0px solid #440020;
@@ -221,7 +221,7 @@ body {
     font-size: 40px;
     background-color: #4ECDC4;
 }
-#happy_score, #evil_score, #happy_lives, #evil_lives {
+#happy_score, #evil_score, #happy_lives, #evil_lives, #balloons {
     /*position: relative;*/
     display: inline;
     float: left;
@@ -245,7 +245,7 @@ body {
     left: 2px;
 }
 
-#evil_results, #happy_results {
+#evil_results, #happy_results, #balloon_results {
     color: #AA1111;
 }
 
@@ -254,4 +254,10 @@ body {
 }
 #evil_lives
 {
+}
+
+#balloons {
+    margin-left: 30%;
+    margin-top: 2%;
+    width: 300px;
 }
