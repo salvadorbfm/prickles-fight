@@ -1,4 +1,20 @@
+/*
 
+    __ _      ____  _______ __       ___  _____      ______ __ __   ___      ____  ____  ____   __ __  _ _       ___ _____
+   /  | |    /    |/ ___|  |  |     /   \|     |    |      |  |  | /  _]    |    \|    \|    | /  |  |/ | |     /  _/ ___/
+  /  /| |   |  o  (   \_|  |  |    |     |   __|    |      |  |  |/  [_     |  o  |  D  )|  | /  /|  ' /| |    /  [(   \_
+ /  / | |___|     |\__  |  _  |    |  O  |  |_      |_|  |_|  _  |    _]    |   _/|    / |  |/  / |    \| |___|    _\__  |
+/   \_|     |  _  |/  \ |  |  |    |     |   _]       |  | |  |  |   [_     |  |  |    \ |  /   \_|     |     |   [_/  \ |
+\     |     |  |  |\    |  |  |    |     |  |         |  | |  |  |     |    |  |  |  .  \|  \     |  .  |     |     \    |
+ \____|_____|__|__| \___|__|__|     \___/|__|         |__| |__|__|_____|    |__|  |__|\_|____\____|__|\_|_____|_____|\___|
+
+           Code by Salvador Elizarraras Montenegro
+                   @SalvadorBFM
+           Art  by Arturo Elizarraras Montenegro
+                   @sagitarioaem
+
+           2013
+*/
 
 @font-face
 {
@@ -7,12 +23,14 @@ src: url('CHERI___.TTF');
 font-weight:bold;
 font-stretch: semi-expanded;
 }
+
 @font-face
 {
 font-family: cheri_light;
 src: url('CHERI___.TTF');
 font-stretch: semi-expanded;
 }
+
 html,
 body {
    margin: 0;
@@ -20,7 +38,6 @@ body {
 }
 
 body {
-    /*background-color: #C7F464;*/
     background-color: #F1F1DC;
     font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
     line-height: 1.4em;

@@ -1,12 +1,12 @@
 /*
-      ______ _       _     _            __   _______ _            _____      _      _    _           _
- |  ____(_)     | |   | |          / _| |__   __| |          |  __ \    (_)    | |  | |         | |
- | |__   _  __ _| |__ | |_    ___ | |_     | |  | |__   ___  | |__) | __ _  ___| | _| | ___  ___| |
- |  __| | |/ _` | '_ \| __|  / _ \|  _|    | |  | '_ \ / _ \ |  ___/ '__| |/ __| |/ / |/ _ \/ __| |
- | |    | | (_| | | | | |_  | (_) | |      | |  | | | |  __/ | |   | |  | | (__|   <| |  __/\__ \_|
- |_|    |_|\__, |_| |_|\__|  \___/|_|      |_|  |_| |_|\___| |_|   |_|  |_|\___|_|\_\_|\___||___(_)
-            __/ |
-           |___/
+
+    __ _      ____  _______ __       ___  _____      ______ __ __   ___      ____  ____  ____   __ __  _ _       ___ _____
+   /  | |    /    |/ ___|  |  |     /   \|     |    |      |  |  | /  _]    |    \|    \|    | /  |  |/ | |     /  _/ ___/
+  /  /| |   |  o  (   \_|  |  |    |     |   __|    |      |  |  |/  [_     |  o  |  D  )|  | /  /|  ' /| |    /  [(   \_
+ /  / | |___|     |\__  |  _  |    |  O  |  |_      |_|  |_|  _  |    _]    |   _/|    / |  |/  / |    \| |___|    _\__  |
+/   \_|     |  _  |/  \ |  |  |    |     |   _]       |  | |  |  |   [_     |  |  |    \ |  /   \_|     |     |   [_/  \ |
+\     |     |  |  |\    |  |  |    |     |  |         |  | |  |  |     |    |  |  |  .  \|  \     |  .  |     |     \    |
+ \____|_____|__|__| \___|__|__|     \___/|__|         |__| |__|__|_____|    |__|  |__|\_|____\____|__|\_|_____|_____|\___|
 
            Code by Salvador Elizarraras Montenegro
                    @SalvadorBFM
@@ -14,7 +14,6 @@
                    @sagitarioaem
 
            2013
-
 */
 (function(undefined) {
 
@@ -768,6 +767,7 @@
             $("#game_counter").html(self.counter);
 
 
+            load_game();
             self.timer = timer_handler.safe_interval(function(){
                 self.counter--;
                 if (self.counter == 0) {
@@ -775,16 +775,14 @@
                     $('#game_canvas').show();
                     $('#game_score').show();
                     game_state = state.playing;
-                    start_game();
-                    self.start_game_intervals();
-                    //clearInterval(self.timer); // TODO: safe_clear_interval()
+                    self.load_intervals();
                 }
                 $("#game_counter").html(self.counter);
             }, 1000);
 
         };
 
-        self.start_game_intervals = function() {
+        self.load_intervals = function() {
             timer_handler.safe_interval(animate, frames_rate, "animate");
             timer_handler.safe_interval(update_score, frames_rate, "update_score");
             timer_handler.safe_interval(update_lives, frames_rate, "update_lives");
@@ -824,7 +822,7 @@
         context = canvas.getContext('2d');
     };
 
-    var start_game = function() {
+    var load_game = function() {
         background = Background({
             assets : background_assets
         });
