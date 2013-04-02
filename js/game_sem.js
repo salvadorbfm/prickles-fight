@@ -86,13 +86,15 @@
                         "evil_wins" : 5
     };
 
-    var limit = 200;
+
 
     var game_state = state.onhold;
 
     var BaseSprite = function(config) {
         config = config || {};
         var self = {};
+        $.extend(self, EventEmitter());   // Necessary for event handling with EventEmmiter.js
+
         self.assets = config.assets || [];
         self.frames = [];
         self.frame = 0;
@@ -143,8 +145,6 @@
         config = config || {};
         var self = BaseSprite(config);
 
-
-
         self.speed_x = config.speed_x || 1.0;
         self.speed_y = config.speed_y || 1.0;
         self.boost = 3.0;
@@ -154,11 +154,10 @@
 
         self.balloons_destroyed = 0;
 
-
         self.was_attacked = false;                   // For main characters
         self.has_died = false;                       // For main characters
 
-        self.init = function() {
+        self.init = function(update_score_func) {
             self.drawable = true;
             self.was_attacked = false;
             self.frame = 0;
@@ -254,11 +253,16 @@
         self.has_exploited = false;
         self.release_time_started = false;
         self.time = config.time || 10000;
+        self.update_function = function() {
+            console.log("Not defined function!");
+        };
 
-        self.init = function () {
+        self.init = function (func) {
             //console.log("Bomb has being intialized at: " + self.x + ", " + self.y);
             self.has_exploited = false;
             self.about_to_explote = false;
+            self.update_function = func || self.update_function;
+            self.bind("update_lives", self.update_function);
             setTimeout(function(){
                 //console.log("Bomb has exploited!!");
                 self.about_to_explote = true;
@@ -294,6 +298,9 @@
                     }
                     else {
                         _array[i].lives.pop();
+                        self.trigger({
+                            type:"update_lives"
+                        });
                     }
                 }
             }
@@ -325,7 +332,7 @@
         self.down=false;
         self.lives = [true, true, true];
 
-        self.init = function(){
+        self.init = function(update_score_func){
             $('#game_canvas').mousemove(self.mouse_move_handler);
             $('#game_canvas').mousedown(self.mouse_down_handler);
             $('#game_canvas').mouseup(self.mouse_up_handler);
@@ -333,7 +340,16 @@
 
             //$('body').keypress(self.keypress_handler);
             self.drawable = true;
+            self.bind("update_score", update_score_func);
+        };
+
+        self.respawn = function() {
+            self.drawable = true;
             self.lives = [true, true, true];
+            self.has_died = false;
+            self.balloons_destroyed = 0;
+            self.was_attacked = false;
+            self.has_died = false;
         };
 
         self.keypress_handler = function(ev) {
@@ -395,6 +411,11 @@
                 if (phys.check_collision( self, sprites[i]) ){
                     sprites[i].drawable = false;
                     self.balloons_destroyed++;
+                    self.trigger({
+                        id:"#happy_results",
+                        type:"update_score",
+                        points:self.balloons_destroyed
+                    });
                 }
             };
         };
@@ -430,6 +451,10 @@
         self.sprite_target = config.sprite_target || -1;
         self.lives = [true, true, true];
 
+        self.init = function(update_score_func) {
+            self.drawable = true;
+            self.bind("update_score", update_score_func);
+        };
         // search(happy,sprites)
         // This function looks for the closest sprite
         self.search = function(happy, sprites, ally_target){
@@ -495,7 +520,11 @@
                     sprites[self.sprite_target].drawable = false;
                     self.balloons_destroyed++;
                     self.sprite_target = 0;
-                    //debugger;
+                    self.trigger({
+                        id:"#evil_results",
+                        type:"update_score",
+                        points:self.balloons_destroyed
+                    });
                 }
             }
         };
@@ -784,8 +813,7 @@
 
         self.load_intervals = function() {
             timer_handler.safe_interval(animate, frames_rate, "animate");
-            timer_handler.safe_interval(update_score, frames_rate, "update_score");
-            timer_handler.safe_interval(update_lives, frames_rate, "update_lives");
+            //timer_handler.safe_interval(update_lives, frames_rate, "update_lives");
             timer_handler.safe_interval(update_evil, evil_frames_rate, "update_evil");
             timer_handler.safe_interval(update_bomb, bomb_frame_rate, "update_bomb");
             timer_handler.safe_interval(update_happy, happy_frames_rate, "update_happy");
@@ -845,12 +873,14 @@
             assets: happy_assets
         });
 
-        happy.init();
+        happy.init(update_score_c);
         happy.build_frames();
 
         add_evils(1);
+        balloons.limit = 200;
         add_balloons(25);
         add_bombs(2);
+        update_lives();
     }
 
     var animate = function() {
@@ -926,7 +956,14 @@
         }
         //**********************          END               ************************
     };
-
+    balloons.update_limit = function(n_balloons) {
+        balloons.limit -= n_balloons;
+        balloons.trigger({
+            type:"update_score",
+            id: "#balloon_results",
+            points:balloons.limit
+        });
+    };
     /* TimeHandler is a class that handles the safe_interval function.
        Work around for clearInterval:
             Since we have a "safe interval" we need a way to clear this safe interval,
@@ -989,7 +1026,7 @@
             game_state = state.evil_wins;
         }else if (evils[0].has_died == true) {                     // Needs support
             game_state = state.happy_wins;
-        }else if (limit <= 0 && util.get_drawables(balloons) === 0) {                     // Needs support
+        }else if (balloons.limit <= 0 && util.get_drawables(balloons) === 0) {                     // Needs support
             game_state = (happy.balloons_destroyed > evils[0].balloons_destroyed) ? (state.happy_wins):(state.evil_wins);
         }else {
             return ;
@@ -1003,16 +1040,16 @@
 
     };
 
-    var update_score = function () {
+    var update_score_c = function (e) {
+        /*
         var total_destroyed = 0;
         for (var i = 0; i < evils.length; i++) {
             total_destroyed += evils[i].balloons_destroyed;
         };
-        $("#evil_results").html( total_destroyed.toString() );
-        $("#happy_results").html(happy.balloons_destroyed.toString());
-        $("#balloon_results").html(limit.toString());
+        */
+        $(e.id.toString()).html( e.points.toString() );
     };
-    var update_lives = function() {
+    var update_lives = function(e) {
         var view = {
             lives: happy.lives
         };
@@ -1083,18 +1120,18 @@
             x = 0,
             y = 0;
 
-        // Balloons limit has been reached, time to see who wins!
-        if (limit === 0) {
+        // Balloons balloons.limit has been reached, time to see who wins!
+        if (balloons.limit === 0) {
             console.log("Limit has been reached, time to see who is the champ! ");
             return ;
         }
         // We need to get just the necessary balloons
-        if (new_balloons > limit) {
-            new_balloons = util.get_random_int(1, limit);
+        if (new_balloons > balloons.limit) {
+            new_balloons = util.get_random_int(1, balloons.limit);
         }
 
         // update limit
-        limit -= new_balloons;
+        balloons.update_limit(new_balloons);
 
         for (var i=0; i<balloons.length ; i++) {
             if (balloons[i].drawable === false) {
@@ -1111,13 +1148,7 @@
                 break;
             }
         }
-        /*
-        trim_array(balloons);
-        if (evils.length > 1)
-            max = (evils[0].balloons_destroyed > evils[1].balloons_destroyed)?(evils[0].balloons_destroyed):(evils[1].balloons_destroyed);
-        if ((balloons.length) < 25)
-            add_balloons(4);
-        */
+
     };
 
     /* update_bombs is binded to a safe_interval and handles the way
@@ -1142,6 +1173,7 @@
                             height : 70.0,
                             assets: evil_assets
                             }));
+            evils[i].init(update_score_c);
             evils[i].build_frames();
             x += 250;
             y += 150;
@@ -1170,7 +1202,7 @@
                         })
                     );
             bomb[i].build_frames();
-            bomb[i].init();
+            bomb[i].init(update_lives);
             startX = partX;
             startY = partY;
             partX *= 2;
@@ -1191,7 +1223,9 @@
             y;
         n_balloons = n_balloons || util.get_random_int(5,10);
 
-        limit -= n_balloons;
+        $.extend(balloons, EventEmitter());
+        balloons.bind("update_score", update_score_c);
+        balloons.update_limit(n_balloons);
         // Add new balloons
         current_index = balloons.length;
         for (var i = 0; i < n_balloons; i++) {

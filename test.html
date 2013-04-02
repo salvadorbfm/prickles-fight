@@ -1,0 +1,44 @@
+<html>
+<head>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="/src/EventEmitter.js"></script>
+    <script type="text/javascript">
+(function(global){
+
+    global.Numero = function() {
+        var self = {};
+
+        $.extend(self, EventEmitter());
+
+        self.menor_a_diez = function(){
+            var n = 0;
+            do {
+                n = Math.floor( Math.random() * (100-1+1) ) + 1;
+                console.log(n);
+            }while( n > 10);
+
+            setTimeout(function(){
+                self.trigger({
+                    type:'numero_generado',
+                    n:n
+                });
+            },1000);
+        }
+        return self;
+    };
+
+
+    numero = global.Numero();
+    numero.bind("numero_generado", function(e){
+        console.log("El numero menor a diez es : ", e.n);
+    });
+
+    numero.menor_a_diez();
+
+})(window);
+    </script>
+</head>
+<body>
+
+</body>
+</html>
