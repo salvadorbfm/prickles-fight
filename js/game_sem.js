@@ -163,6 +163,14 @@
             self.frame = 0;
         };
 
+        self.respawn = function() {
+            self.drawable = true;
+            self.was_attacked = false;
+            self.frame = 0;
+            self.balloons_destroyed = 0;
+            self.has_died = false;
+        };
+
         self.invert_position = function(directionArg){
             var direction = directionArg || '0';
 
@@ -454,6 +462,16 @@
         self.init = function(update_score_func) {
             self.drawable = true;
             self.bind("update_score", update_score_func);
+        };
+
+        self.respawn = function() {
+            self.drawable = true;
+            self.lives = [true, true, true];
+            self.has_died = false;
+            self.balloons_destroyed = 0;
+            self.was_attacked = false;
+            self.has_died = false;
+            self.sprite_target = -1;
         };
         // search(happy,sprites)
         // This function looks for the closest sprite
@@ -804,22 +822,11 @@
                     $('#game_canvas').show();
                     $('#game_score').show();
                     game_state = state.playing;
-                    self.load_intervals();
+                    load_intervals();
                 }
                 $("#game_counter").html(self.counter);
             }, 1000);
 
-        };
-
-        self.load_intervals = function() {
-            timer_handler.safe_interval(animate, frames_rate, "animate");
-            //timer_handler.safe_interval(update_lives, frames_rate, "update_lives");
-            timer_handler.safe_interval(update_evil, evil_frames_rate, "update_evil");
-            timer_handler.safe_interval(update_bomb, bomb_frame_rate, "update_bomb");
-            timer_handler.safe_interval(update_happy, happy_frames_rate, "update_happy");
-            timer_handler.safe_interval(update_balloons, balloons_frames_rate, "update_balloons");
-            timer_handler.safe_interval(update_bombs, 12000, "update_bombs");                        // Fixing
-            timer_handler.safe_interval(update_background, background_frame_rate, "update_background");
         };
 
         self.game_instructions_handler = function() {
@@ -833,7 +840,43 @@
         return self;
     };
 
+    /* TimeHandler is a class that handles the safe_interval function.
+       Work around for clearInterval:
+            Since we have a "safe interval" we need a way to clear this safe interval,
+            for this purpose, we need to call like:
+                time_handler.safe_interval( myfunc, time, "myfunc")
+            and clear the interval with:
+                time_handler.running_functions["myfunc"] = false
+    */
+    var TimeHandler = function(config) {
+        config = config || {};
+        var self = {};
 
+        self.running_functions = {};
+
+        self.safe_interval  = function ( _funct, _time, _name){
+            if (typeof(_funct) != "function")
+                return ;
+            if (_time <= 0)
+                return ;
+
+            self.running_functions[_name] = true;
+            (function interval(){
+                if ( self.running_functions[_name] === false )
+                    return;
+                _funct();
+                setTimeout(interval, _time);
+            })();
+        };
+        self.kill_all_intervals = function() {
+            //for (var obj)
+            console.log("kill_all_intervals!!");
+            for (var obj in self.running_functions){
+                self.running_functions[obj] = false;
+            }
+        }
+        return self;
+    };
 
     var setup = function() {
         ui_handler = UIHandler();
@@ -881,7 +924,26 @@
         add_balloons(25);
         add_bombs(2);
         update_lives();
-    }
+    };
+    var load_intervals = function() {
+        timer_handler.safe_interval(animate, frames_rate, "animate");
+        timer_handler.safe_interval(update_evil, evil_frames_rate, "update_evil");
+        timer_handler.safe_interval(update_bomb, bomb_frame_rate, "update_bomb");
+        timer_handler.safe_interval(update_happy, happy_frames_rate, "update_happy");
+        timer_handler.safe_interval(update_balloons, balloons_frames_rate, "update_balloons");
+        timer_handler.safe_interval(update_bombs, 12000, "update_bombs");                        // Fixing
+        timer_handler.safe_interval(update_background, background_frame_rate, "update_background");
+    };
+
+    var restart_game = function() {
+        happy.respawn();
+        evil.respawn();
+
+        load_intervals();
+        update_lives();
+
+        game_state = state.playing;
+    };
 
     var animate = function() {
         var last_target = -1;
@@ -956,6 +1018,7 @@
         }
         //**********************          END               ************************
     };
+
     balloons.update_limit = function(n_balloons) {
         balloons.limit -= n_balloons;
         balloons.trigger({
@@ -963,42 +1026,6 @@
             id: "#balloon_results",
             points:balloons.limit
         });
-    };
-    /* TimeHandler is a class that handles the safe_interval function.
-       Work around for clearInterval:
-            Since we have a "safe interval" we need a way to clear this safe interval,
-            for this purpose, we need to call like:
-                time_handler.safe_interval( myfunc, time, "myfunc")
-            and clear the interval with:
-                time_handler.running_functions["myfunc"] = false
-    */
-    var TimeHandler = function(config) {
-        config = config || {};
-        var self = {};
-
-        self.running_functions = {};
-        self.safe_interval  = function ( _funct, _time, _name){
-            if (typeof(_funct) != "function")
-                return ;
-            if (_time <= 0)
-                return ;
-
-            self.running_functions[_name] = true;
-            (function interval(){
-                if ( self.running_functions[_name] === false )
-                    return;
-                _funct();
-                setTimeout(interval, _time);
-            })();
-        };
-        self.kill_all_intervals = function() {
-            //for (var obj)
-            console.log("kill_all_intervals!!");
-            for (var obj in self.running_functions){
-                self.running_functions[obj] = false;
-            }
-        }
-        return self;
     };
 
     var check_happy_lives = function() {
