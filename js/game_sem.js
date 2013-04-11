@@ -784,13 +784,27 @@
             $('#game_start_button').mouseover(self.game_start_over).mouseout(self.game_start_out);
             $('#game_start_instructions').mouseover(self.game_instructions_over).mouseout(self.game_instructions_out);
 
+            $('body').keypress(self.restart_handler);
             $('.game_layer').hide();
             $('#game_start_screen').show();
         };
 
         self.counter = 3;
         self.timer;
+        self.xTriggered = 0;
 
+        self.restart_handler = function(event) {
+            switch (event.which) {
+                case 32:
+                    if ( game_state === state.happy_wins || game_state === state.evil_wins) {
+                        restart_game();
+                    }
+                break;
+                case 13:
+                 event.preventDefault();
+                break;
+            }
+        };
         self.game_start_out = function() {
             $('#game_start_button').css('background-color', '#3E3F12')
         };
@@ -937,17 +951,18 @@
 
     var restart_game = function() {
         happy.respawn();
-        evil.respawn();
-
+        evils[0].respawn();    // Need support for multiplayer
         load_intervals();
+        add_balloons(25);
         update_lives();
-
+        balloons.limit = 200;
         game_state = state.playing;
     };
 
     var animate = function() {
         var last_target = -1;
         var scale = 0.0;
+        var idx = 0;
         context.clearRect(0,0,canvas.width, canvas.height);
 
         context.drawImage(background.frames[background_frame], 0, 0);
@@ -958,13 +973,14 @@
         check_evil_lives();
         check_end_of_game();
 
-        if (game_state === state.happy_wins) {
-            context.drawImage(winner.frames[0], 140, 20);
+        if (game_state === state.happy_wins || game_state === state.evil_wins) {
+            idx = (game_state === state.happy_wins ) ? (0):(1);
+            context.drawImage(winner.frames[idx], 140, 20);
             timer_handler.kill_all_intervals();
-            return;
-        } else if (game_state === state.evil_wins) {
-            context.drawImage(winner.frames[1], 140, 20);
-            timer_handler.kill_all_intervals();
+            context.font = '14pt Arial';
+            context.lineWidth = 3;
+            context.fillStyle = 'black';
+            context.fillText('Press Space to play again!', 270, 540);
             return;
         }
 
@@ -986,7 +1002,7 @@
                 else
                     context.drawImage(bomb[i].frames[bomb[i].frame], bomb[i].x, bomb[i].y);
 
-                if (bomb[i].has_exploited == true && bomb[i].release_time_started == false) {
+                if (bomb[i].has_exploited == true && bomb[i].release_time_started === false) {
                     bomb[i].destroy_when_explosion(balloons);
                     bomb[i].destroy_when_explosion([happy,evils[0]]); // This will need support for multiplayer
                     bomb[i].set_release_time();
