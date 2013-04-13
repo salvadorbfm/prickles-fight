@@ -952,11 +952,11 @@
     var restart_game = function() {
         happy.respawn();
         evils[0].respawn();    // Need support for multiplayer
-        load_intervals();
         add_balloons(25);
         update_lives();
         balloons.limit = 200;
         game_state = state.playing;
+        load_intervals();
     };
 
     var animate = function() {
@@ -968,7 +968,6 @@
         context.drawImage(background.frames[background_frame], 0, 0);
 
         // ************************** Check end of game  ****************************
-        game_state = state.playing;
         check_happy_lives();
         check_evil_lives();
         check_end_of_game();
