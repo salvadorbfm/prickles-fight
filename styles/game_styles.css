@@ -128,15 +128,40 @@ body {
 #game_counter_screen {
     width: 700px;
     height: 500px;
-    background-color: #BBD774;
+    background-color: #80B3FF;
+    background:
+                url(../js/content/evil_left.png) 580px 335px no-repeat,
+                url(../js/content/fondo1.png) 0px 0px no-repeat;
 }
 #game_counter {
     font-family: cheri_bold;
-    width: 125px;
-    height: 125px;
-    font-size: 120px;
-    margin-left: 310px;
-    margin-top: 180px;
+    width: 100%;
+    height: 100%;
+    font-size: 50px;
+    margin-left: 0px;
+    margin-top: 0px;
+
+}
+#game_counter img {
+    margin-left: 28%;
+    margin-top: 30%;
+}
+#game_counter img#happy_img {
+    float: left;
+    margin-left: 10%;
+    margin-top: 30%;
+}
+#game_counter div {
+    font: 16px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    width: 70%;
+    margin-left: 14%;
+    margin-top: 130px;
+    padding: 15px 15px 15px 15px;
+    background-color: #A2122F;
+    text-align: center;
+    color: #EEEEEE;
+    border-radius:25px;
+    box-shadow: 5px 5px 10px #888888;
 }
 #game_start_button {
     margin: 0px auto;

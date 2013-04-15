@@ -25,7 +25,8 @@
         canvas = null,
         context = null,
         ui_handler = null,
-        timer_handler = null;
+        timer_handler = null,
+        resources = 30;
 
     var happy_assets = [
                         '/js/content/happy_right.png',
@@ -121,11 +122,11 @@
         self.drawable = false;
 
         self.update_function = function() {
-            console.log("Not defined function!");
+            //console.log("Not defined function!");
         };
 
         self.update_score = function() {
-            console.log("Not defined function!");
+            //console.log("Not defined function!");
         };
 
         self.get_center_x = function(){
@@ -146,7 +147,7 @@
         }
 
         self.onImageLoad = function(){
-            //console.log("IMAGE!!!");
+            resources++;
         };
 
 
@@ -774,7 +775,7 @@
 
             for (var i = 0; i < _array.length; i++) {
                 if (self.check_collision(a, _array[i]) == true) {
-                    console.log("");
+                    //console.log("");
                 }
             }
 
@@ -937,24 +938,39 @@
         self.game_start_handler = function() {
             $('.game_layer').hide();
             $("#game_counter_screen").show();
-            $("#game_counter").html(self.counter);
 
+            $("#happy_img").hide();
+            $("#happy_img").slideDown("slow", function(){
+                $("#game_counter div").hide();
+                self.print_loading();
+                $("#game_counter div").fadeIn();
 
+            });
             load_game();
-            self.timer = timer_handler.safe_interval(function(){
-                self.counter--;
-                if (self.counter == 0) {
-                    $(".game_layer").hide();
-                    $('#game_canvas').show();
-                    $('#game_score').show();
-                    game_state = state.playing;
-                    load_intervals();
-                }
-                $("#game_counter").html(self.counter);
-            }, 1000);
+            setTimeout(function(){
+                self.timer = timer_handler.safe_interval(function(){
+                    if (resources > 29) {
+                        $(".game_layer").hide();
+                        $('#game_canvas').show();
+                        $('#game_score').show();
+                        game_state = state.playing;
+                        load_intervals();
+                        timer_handler.kill_interval("game_start_handler");
+                    }
+                }, 1000, "game_start_handler");
+            },3000);
 
         };
 
+        self.print_loading = function() {
+            var view = {
+                instructions: "You are playing as happy, just click on the screen in order to move and collide with the balloons.",
+                gif: '/js/content/loader.gif'
+            };
+            var output = "<img src='{{gif}}'><br/><br/><div>{{instructions}}</div>";
+            var html = Mustache.to_html(output, view);
+            $('#game_counter').append(html);
+        };
         self.game_instructions_handler = function() {
             if (instructions_counter == 0)
                 $('#game_instructions').show();
@@ -996,11 +1012,14 @@
         };
         self.kill_all_intervals = function() {
             //for (var obj)
-            console.log("kill_all_intervals!!");
+            //console.log("kill_all_intervals!!");
             for (var obj in self.running_functions){
                 self.running_functions[obj] = false;
             }
         }
+        self.kill_interval = function(_name) {
+            self.running_functions[_name] = false;
+        };
         return self;
     };
 
@@ -1056,7 +1075,7 @@
         });
         wing.build_frames();
         add_evils(1);
-        balloons.limit = 200;
+        balloons.limit = 150;
         add_balloons(25);
         add_bombs(2);
         setTimeout( function(){
@@ -1187,7 +1206,7 @@
     var check_happy_lives = function() {
         if (happy.lives.length === 0) {
             happy.has_died = true;
-            console.log("Happy has died! =(");
+            //console.log("Happy has died! =(");
         }
     };
 
@@ -1195,7 +1214,7 @@
         for (var i = 0; i < evils.length; i++) {
             if (evils[i].lives.length === 0) {
                 evils[i].has_died = true;
-                console.log("Evil has died! =(");
+                //console.log("Evil has died! =(");
             }
         };
     };
@@ -1310,7 +1329,7 @@
 
         // Balloons balloons.limit has been reached, time to see who wins!
         if (balloons.limit === 0) {
-            console.log("Limit has been reached, time to see who is the champ! ");
+            //console.log("Limit has been reached, time to see who is the champ! ");
             return ;
         }
         // We need to get just the necessary balloons
