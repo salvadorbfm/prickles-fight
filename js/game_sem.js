@@ -392,6 +392,8 @@
         };
 
         self.check_powerup = function(happy) {
+            if (happy.was_powered === true)
+                return;
             if (phys.check_collision(self, happy) === true) {
                 self.drawable = false;
                 self.is_available = false;
