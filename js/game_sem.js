@@ -13,6 +13,7 @@
            Art  by Arturo Elizarraras Montenegro
                    @sagitarioaem
 
+           Creative Commons CC BY-NC-SA
            2013
 */
 (function(undefined) {
@@ -28,9 +29,11 @@
 
     var happy_assets = [
                         '/js/content/happy_right.png',
-                        '/js/content/happy_right_attacked.png',
                         '/js/content/happy_left.png',
-                        '/js/content/happy_left_attacked.png'
+                        '/js/content/happy_right_attacked.png',
+                        '/js/content/happy_left_attacked.png',
+                        '/js/content/happy_right_wings.png',
+                        '/js/content/happy_left_wings.png'
                        ],
 
         evil_assets = ['/js/content/evil_right.png',
@@ -51,6 +54,10 @@
                        '/js/content/bomb2_left.png',
                        '/js/content/bomb_exp.png'],
 
+        wing_assets = [ '/js/content/wing1.png',
+                        '/js/content/wing2.png',
+                        '/js/content/wing3.png',
+                        '/js/content/wing4.png'],
         background_assets = ['../js/content/fondo1.png',
                              '../js/content/fondo2.png'],
 
@@ -62,6 +69,8 @@
         happy_frames_rate = 1000/2,
         evil_frames_rate = 1000/2,
         bomb_frame_rate = 1000/2,
+        wing_frame_rate = 1000/3,
+        wing_update_rate = 20000,
         background_frame_rate = 1000,
         balloons_frames_rate = 1000,
         collisions_frame_rate = 500;
@@ -75,6 +84,7 @@
         happy,
         balloons= [],                                      // A lot of balloons
         bomb = [],
+        wing,
         winner,
         background;
 
@@ -354,6 +364,45 @@
         return self;
     };
 
+    var Wing = function(config) {
+        var self = BaseSprite(config);
+        config = config || {};
+
+        self.drawable = false;
+        self.is_available = false;
+        self.init = function(){
+            self.drawable = true;
+            self.is_available = true;
+            setTimeout(function(){
+                self.is_available = false;
+                self.drawable = false;
+            },7000);
+        };
+
+        self.respawn = function() {
+            var x = 0,
+                y = 0;
+            do {
+                    x = util.get_random_int(0,game_width);
+                    y = util.get_random_int(0,game_height);
+            }while ( phys.check_collision_by_points(x, y, 50.0, happy, balloons, evils) == true);
+            wing.x = x;
+            wing.y = y;
+            self.init();
+        };
+
+        self.check_powerup = function(happy) {
+            if (phys.check_collision(self, happy) === true) {
+                self.drawable = false;
+                self.is_available = false;
+                happy.trigger({
+                    type:"speed_powerup"
+                });
+            }
+
+        };
+        return self;
+    };
     // ********************** Main Characters *************************************
     // TODO: Have a generic template for a user controlled character
     // TODO: Think in one especial power for both of them.
@@ -362,22 +411,38 @@
     */
     var Happy = function(config){
         var self = {};
+        var old_speed_x = 0,
+            old_speed_y = 0;
 
         self = Sprite(config);
 
         self.x_mouse = 0;
         self.y_mouse = 0;
         self.down=false;
+        self.was_powered = false;
 
-
-        self.init = function(update_score_func, update_lives_func){
+        self.init = function(){
             $('#game_canvas').mousemove(self.mouse_move_handler);
             $('#game_canvas').mousedown(self.mouse_down_handler);
             $('#game_canvas').mouseup(self.mouse_up_handler);
             $('#game_canvas').mouseout(self.mouse_up_handler);
-
+            self.bind("speed_powerup", self.speed_powerup);
             //$('body').keypress(self.keypress_handler);
             self.drawable = true;
+        };
+
+        self.speed_powerup = function() {
+            old_speed_x = self.speed_x;
+            old_speed_y = self.speed_y;
+
+            self.speed_x = 20.0;
+            self.speed_y = 20.0;
+            self.was_powered = true;
+            setTimeout(function(){
+                self.speed_x = old_speed_x;
+                self.speed_y = old_speed_y;
+                self.was_powered = false;
+            }, 7000);
         };
 
         self.respawn = function() {
@@ -545,7 +610,7 @@
             if (happy.invulnerability === false) {
                 // Checking magnitude with enemy, if this is less we must grab it
                 magnitude_with_enemy = util.get_magnitude(center, center_enemy);
-                if (magnitude_with_enemy + 0.2 < magnitude) {   // 0.2 is a workaround
+                if (magnitude_with_enemy < min) {   // 0.2 is a workaround
                     self.sprite_target.enemy = -2;                                       // For enemies
                     distance_to_enemy = util.get_distance( center, center_enemy );
                 }
@@ -980,10 +1045,21 @@
         happy.init();
         happy.build_frames();
 
+        wing = Wing({
+            x: util.get_random_int(10, game_width-10),
+            y: util.get_random_int(10, game_height-10),
+            width: 73,
+            height: 73,
+            assets: wing_assets,
+        });
+        wing.build_frames();
         add_evils(1);
         balloons.limit = 200;
         add_balloons(25);
         add_bombs(2);
+        setTimeout( function(){
+            add_wing();
+        }, 15000);
         update_lives();
     };
     var load_intervals = function() {
@@ -995,6 +1071,10 @@
         timer_handler.safe_interval(update_balloons, balloons_frames_rate, "update_balloons");
         timer_handler.safe_interval(update_bombs, 12000, "update_bombs");                        // Fixing
         timer_handler.safe_interval(update_background, background_frame_rate, "update_background");
+        setTimeout(function() {
+            timer_handler.safe_interval(add_wing, wing_update_rate, "add_wing");
+        }, wing_update_rate);
+        timer_handler.safe_interval(update_wing, wing_frame_rate, "update_wing");
     };
 
     var restart_game = function() {
@@ -1033,6 +1113,7 @@
         }
 
         // ***************************       END            ************************
+
 
         //********************** Bombs Drawing and Updating ************************
         for (var i=0; i < bomb.length; i++) {
@@ -1077,6 +1158,12 @@
         happy.update_position();
         //**********************          END               ************************
 
+        // ********************** Wing Drawing and Updating ************************
+        if (wing.drawable === true && wing.is_available === true){
+            context.drawImage(wing.frames[wing.frame], wing.x, wing.y);
+            wing.check_powerup(happy);
+        }
+        // ***************************       END            ************************
         //********************** Evil Drawing and Updating ************************
         for (var i = 0; i < evils.length; i++) {
             context.drawImage(evils[i].frames[evil_frame], evils[i].x, evils[i].y);
@@ -1178,13 +1265,15 @@
     var update_happy = function() {
         var offset = 0;
         if (happy.was_attacked === true) {
-            offset = 1;
+            offset = 2;
             //happy.was_attacked = false;
+        }else if (happy.was_powered === true){
+            offset = 4
         }
         if (happy.direction_x > 0)
             happy_frame = 0 + offset;
         else
-            happy_frame = 2 + offset;
+            happy_frame = 1 + offset;
 
         //happy_frame = (happy_frame + 1) % happy.frames.length;
     };
@@ -1206,6 +1295,9 @@
         }
     };
 
+    var update_wing = function() {
+        wing.frame = (wing.frame+1) % wing.frames.length;
+    };
     /* update_ballons is binded to a safe_interval and this function handles the way
      of how balloons are added to the game */
     var update_balloons = function() {
@@ -1305,6 +1397,9 @@
         }
     };
 
+    var add_wing = function() {
+        wing.respawn();
+    };
     // trim_array releases all elements with drawable == false
     var trim_array = function (_array) {
         for (var i = 0; i < _array.length; i++) {

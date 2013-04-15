@@ -53,10 +53,10 @@ body {
 
 
 #info {
-    margin: 100px auto;
+    margin-top:10px;
     color: #353535;
     border: 0px solid papayaWhip;
-    font-size: 18px;
+    font-size: 12px;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
     text-align: center;
 }
@@ -90,7 +90,9 @@ body {
     font-size: 55px;
     font-weight: bold;
     text-align: center;
-    margin: 50px auto;
+    margin-top: 50px;
+    margin-bottom: 25px;
+
     color: #000000;
     color: rgba(0,0,0, 0.8);
     text-shadow: -2px -2px rgba(0, 0, 0, 0.2);
@@ -229,13 +231,12 @@ body {
 }
 
 #game_score {
-    height: 170px;
+    height: 120px;
     width: 100%;
     margin-top: 6px;
     border: 0px solid #440020;
-
     font-family: cheri_bold;
-    font-size: 40px;
+    font-size: 35px;
     background-color: #4ECDC4;
 }
 #happy_score, #evil_score, #happy_lives, #evil_lives, #balloons {
@@ -245,13 +246,13 @@ body {
     margin:0;
     padding:0px 3px 0px 3px;
     width: 220px;
-    height: 40px;
+    height: 25px;
     border: 0px solid #440020;
     color: #000000;
 
 }
 #happy_score, #evil_score {
-    margin-top:30px;
+    margin-top:18px;
 }
 #happy_score, #happy_lives {
     right: 0px;
