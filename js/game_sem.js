@@ -964,10 +964,9 @@
 
         self.print_loading = function() {
             var view = {
-                instructions: "You are playing as happy, just click on the screen in order to move and collide with the balloons.",
-                gif: '/js/content/loader.gif'
+                instructions: "You are playing as happy, just click on the screen in order to move and collide with the balloons."
             };
-            var output = "<img src='{{gif}}'><br/><br/><div>{{instructions}}</div>";
+            var output = "<br/><br/><div>{{instructions}}</div>";
             var html = Mustache.to_html(output, view);
             $('#game_counter').append(html);
         };
