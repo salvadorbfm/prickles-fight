@@ -304,3 +304,7 @@ body {
     margin-top: 2%;
     width: 300px;
 }
+
+.grey_text {
+    color: #888888;
+}

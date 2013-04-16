@@ -175,6 +175,7 @@
         self.balloons_destroyed = 0;
         self.invulnerability = false;
 
+        self.is_moving = false;
         self.was_attacked = false;                   // For main characters
         self.has_died = false;                       // For main characters
         self.lives = [true, true, true];             // For main characters
@@ -355,9 +356,9 @@
             }
         };
 
-        self.respawn = function() {
-            self.x = util.get_random_int(0, game_width);
-            self.y = util.get_random_int(0, game_height);
+        self.respawn = function(startX,startY, partX, partY) {
+            self.x = util.get_random_int(startX, partX);
+            self.y = util.get_random_int(startY, partY);
             self.init();
         };
 
@@ -417,12 +418,21 @@
         var old_speed_x = 0,
             old_speed_y = 0;
 
+        var remove_powerup = null;
         self = Sprite(config);
 
         self.x_mouse = 0;
         self.y_mouse = 0;
         self.down=false;
         self.was_powered = false;
+
+        remove_powerup = function() {
+            self.was_powered = false;
+            if (old_speed_x > 0 && old_speed_y > 0) {
+                self.speed_x = old_speed_x;
+                self.speed_y = old_speed_y;
+            }
+        };
 
         self.init = function(){
             $('#game_canvas').mousemove(self.mouse_move_handler);
@@ -442,12 +452,9 @@
             self.speed_y = 20.0;
             self.was_powered = true;
             setTimeout(function(){
-                self.speed_x = old_speed_x;
-                self.speed_y = old_speed_y;
-                self.was_powered = false;
+                remove_powerup();
             }, 7000);
         };
-
         self.respawn = function() {
             self.drawable = true;
             self.lives = [true, true, true];
@@ -455,33 +462,11 @@
             self.balloons_destroyed = 0;
             self.was_attacked = false;
             self.has_died = false;
+            remove_powerup();
+            self.is_moving = false;
+            self.x = 50;
+            self.y = 50;
         };
-
-        self.keypress_handler = function(ev) {
-            var key = ev.keyCode || ev.which;
-            //console.log("keypress: key:" + key);
-            switch (key) {
-                case 119: // W
-                    self.direction_x = 0;
-                    self.direction_y = -1;
-                break;
-                case 97: // A
-                    self.direction_x = -1;
-                    self.direction_y = 0;
-                break;
-                case 115: // S
-                    self.direction_x = 0;
-                    self.direction_y = 1;
-                break;
-                case 100: // D
-                    self.direction_x = 1;
-                    self.direction_y = 0;
-                break;
-                default:
-            }
-
-        };
-
         self.mouse_move_handler = function(ev){
             var offset = $('#game_canvas').offset();
             self.x_mouse =  ev.pageX - offset.left;
@@ -491,7 +476,6 @@
                 self.go_to_the_point(self.x_mouse, self.y_mouse);
             }
         };
-
         self.mouse_down_handler = function(ev){
             self.down = true;
             self.downX = self.x_mouse;
@@ -502,13 +486,12 @@
 
             ev.originalEvent.preventDefault();
         };
-
         self.mouse_up_handler = function(ev){
+            self.is_moving = true;
             self.down = false;
             self.dragging = false;
 
         };
-
         self.is_a_ball_destroyed = function(sprites){
 
             for (var i = 0; i < sprites.length; i++) {
@@ -557,8 +540,14 @@
 
         self.init = function() {
             self.drawable = true;
+            self.on_hold();
         };
-
+        self.on_hold = function() {
+            self.is_moving = false;
+            setTimeout(function(){
+                self.is_moving = true;
+            },2000);
+        };
         self.respawn = function() {
             self.drawable = true;
             self.lives = [true, true, true];
@@ -567,6 +556,9 @@
             self.was_attacked = false;
             self.has_died = false;
             self.sprite_target = {balloon: -1, enemy: -1};
+            self.x = game_width - 100;
+            self.y = game_height - 100;
+            self.on_hold();
         };
         // search(happy,sprites)
         // This function looks for the closest sprite
@@ -1102,7 +1094,7 @@
         evils[0].respawn();    // Need support for multiplayer
         //add_balloons(25);
         update_lives();
-        balloons.limit = 200;
+        balloons.limit = 150;
         respawn_all_balloons();
         game_state = state.playing;
         load_intervals();
@@ -1133,27 +1125,10 @@
         }
 
         // ***************************       END            ************************
-
-
         //********************** Bombs Drawing and Updating ************************
         for (var i=0; i < bomb.length; i++) {
             if (bomb[i].drawable === true) {
-                /*
-                if (bomb[i].frame === 4) {// Explosion
-                    scale = 1.5;
-                }else if (bomb[i].frame === 3) {
-                    scale = 0.8;
-                }
-                else {
-                    scale = 0.0;
-                }
-                if (scale > 0.0)
-                    context.drawImage(bomb[i].frames[bomb[i].frame], bomb[i].x, bomb[i].y, bomb[i].width*scale, bomb[i].height*scale);
-                else
-                    context.drawImage(bomb[i].frames[bomb[i].frame], bomb[i].x, bomb[i].y);
-                */
                 context.drawImage(bomb[i].frames[bomb[i].frame], bomb[i].x, bomb[i].y);
-
                 if (bomb[i].has_exploited == true && bomb[i].release_time_started === false) {
                     bomb[i].destroy_when_explosion(balloons);
                     bomb[i].destroy_when_explosion([happy,evils[0]]); // This will need support for multiplayer
@@ -1170,14 +1145,13 @@
         }
         phys.check_collisions(balloons);
         //**********************          END               ************************
-
-
         //********************** Happy Drawing and Updating ************************
         context.drawImage(happy.frames[happy_frame], happy.x, happy.y);
-        happy.is_a_ball_destroyed(balloons);
-        happy.update_position();
+        if (happy.is_moving === true) {
+            happy.is_a_ball_destroyed(balloons);
+            happy.update_position();
+        }
         //**********************          END               ************************
-
         // ********************** Wing Drawing and Updating ************************
         if (wing.drawable === true && wing.is_available === true){
             context.drawImage(wing.frames[wing.frame], wing.x, wing.y);
@@ -1187,8 +1161,10 @@
         //********************** Evil Drawing and Updating ************************
         for (var i = 0; i < evils.length; i++) {
             context.drawImage(evils[i].frames[evil_frame], evils[i].x, evils[i].y);
-            last_target = evils[i].search(happy,balloons,last_target);
-            evils[i].destroy(happy, balloons, phys);
+            if (evils[i].is_moving === true) {
+                last_target = evils[i].search(happy,balloons,last_target);
+                evils[i].destroy(happy, balloons, phys);
+            }
         }
         //**********************          END               ************************
     };
@@ -1360,10 +1336,17 @@
     /* update_bombs is binded to a safe_interval and handles the way
      of how balloons are added to the game */
     var update_bombs = function() {
-        //trim_array(bomb);
+        var startX = 0,
+            startY = 0,
+            partX = game_width / bomb.length;
+            partY = game_height / bomb.length;
         for (var i = 0; i < bomb.length; i++) {
             if (bomb[i].has_exploited == true && bomb[i].drawable == false) {
-                bomb[i].respawn();
+                bomb[i].respawn(startX, startY, partX, partY);
+                startX = partX;
+                startY = partY;
+                partX += game_width / bomb.length;
+                partY += game_height / bomb.length;
             }
         };
     };
@@ -1378,6 +1361,7 @@
                             width : 70.0,
                             height : 70.0,
                             assets: evil_assets,
+                            update_lives : update_lives,
                             update_score : update_score_c
                             }));
             evils[i].init();
@@ -1398,10 +1382,10 @@
 
         for (var i=0; i<n; i++) {
             bomb.push( Bomb({
-                        //x : util.get_random_int(startX, partX),
-                        x : util.get_random_int(0, game_width),
-                        //y : util.get_random_int(startY, partY),
-                        y : util.get_random_int(0, game_height),
+                        x : util.get_random_int(startX, partX),
+                        //x : util.get_random_int(0, game_width),
+                        y : util.get_random_int(startY, partY),
+                        //y : util.get_random_int(0, game_height),
                         width : 80,
                         height : 80,
                         time : util.get_random_int(5000, 8000),
@@ -1412,8 +1396,8 @@
             bomb[i].init(update_lives);
             startX = partX;
             startY = partY;
-            partX *= 2;
-            partY *= 2;
+            partX += game_width / n;
+            partY += game_height / n;
         }
     };
 
