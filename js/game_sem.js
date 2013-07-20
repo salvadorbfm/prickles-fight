@@ -12,12 +12,12 @@
               };
     })();
 
-    var game = game || {};
-      game_width = 750,
-      game_height = 550,
-      canvas = null,
-      context = null,
-      game.resources = 0;
+    window.game = window.game || {};
+    window.game.resources = 0;
+    window.game.game_width = 750;
+    window.game.game_height = 550;
+    var canvas = null,
+      context = null;
 
     var frames_rate = 16,
         update_rate = 1000/30,
@@ -50,13 +50,12 @@
                         "evil_wins" : 5
     };
 
+    window.game.game_state = state.on_hold;
 
-
-
-    var util = game.util || Util(),
-        phys = game.phys || Phys(),
+    var util = window.game.util || Util(),
+        phys = window.game.phys || Phys(),
         ui_handler = {},
-        timer_handler = game.time_handler || TimeHandler();
+        timer_handler = window.game.time_handler || TimeHandler();
 
     var toggle;
     var happy_assets = [
@@ -118,6 +117,8 @@
             direction_x : util.get_random(-1.0,1.0),
             direction_y : util.get_random(-1.0,1.0),
             assets: happy_assets,
+            update_lives : update_lives,
+            update_score : update_score_c
         });
 
         happy.init();
@@ -125,8 +126,8 @@
         add_evils(1);
 
         wing = Wing({
-            x: util.get_random_int(10, game_width-20),
-            y: util.get_random_int(10, game_height-20),
+            x: util.get_random_int(10, window.game.game_width-20),
+            y: util.get_random_int(10, window.game.game_height-20),
             width: 73,
             height: 73,
             assets: wing_assets,
@@ -145,12 +146,13 @@
         load_game : load_game,
         load_intervals : load_intervals,
         animate : animate,
-        state: state
+        state : state,
+        restart_game: restart_game
       });
       ui_handler.init();
       canvas = document.getElementById( 'game_canvas' );
-      canvas.width = game_width;
-      canvas.height = game_height;
+      canvas.width = window.game.game_width;
+      canvas.height = window.game.game_height;
 
       context = canvas.getContext( '2d' );
     }
@@ -179,6 +181,22 @@
       else{
         //context.clearRect(0,0,canvas.width, canvas.height);
         context.drawImage(background.frames[background_frame], 0, 0);
+        window.game.game_state = state.playing;
+        // ************************** Check end of game  ****************************
+        check_happy_lives();
+        check_evil_lives();
+        check_end_of_game();
+        if (window.game.game_state === state.happy_wins || window.game.game_state === state.evil_wins) {
+            idx = (window.game.game_state === state.happy_wins ) ? (0):(1);
+            context.drawImage(winner.frames[idx], 140, 20);
+            timer_handler.kill_all_intervals();
+            context.font = '14pt Arial';
+            context.lineWidth = 3;
+            context.fillStyle = 'black';
+            context.fillText('Press Space to play again!', 270, 540);
+            return;
+        }
+        // ***************************       END
         //********************** Happy Drawing and Updating ************************
         update_happy();
         context.drawImage(happy.frames[happy_frame], happy.x, happy.y);
@@ -242,10 +260,21 @@
 
     };
     var update_lives = function() {
-
+        var view = {
+            lives: happy.lives
+        };
+        var output = "{{#lives}} <div class='heart'></div> {{/lives}}";
+        var html = Mustache.to_html(output, view);
+        $('#happy_lives').html(html);
+        view = {
+            lives: evils[0].lives        // Need support
+        };
+        output = "{{#lives}} <div class='heart'></div> {{/lives}}";
+        html = Mustache.to_html(output, view);
+        $('#evil_lives').html(html);
     };
-    var update_score_c = function() {
-
+    var update_score_c = function(e) {
+        $(e.id.toString()).html( e.points.toString() );
     };
     balloons.update_limit = function(n_balloons) {
         balloons.limit -= n_balloons;
@@ -282,8 +311,8 @@
             y = 0,
             startX = 0,
             startY = 0,
-            partX = game_width / n,
-            partY = game_height / n;
+            partX = window.game.game_width / n,
+            partY = window.game.game_height / n;
 
         for (var i=0; i<n; i++) {
             bomb.push( Bomb({
@@ -301,8 +330,8 @@
             bomb[i].init(update_lives);
             startX = partX;
             startY = partY;
-            partX += game_width / n;
-            partY += game_height / n;
+            partX += window.game.game_width / n;
+            partY += window.game.game_height / n;
         }
     };
 
@@ -327,8 +356,8 @@
         }
         for (var i = 0; i < balloons.length; i++) {
             do {
-                x = util.get_random_int(0,game_width);
-                y = util.get_random_int(0,game_height);
+                x = util.get_random_int(0, window.game.game_width);
+                y = util.get_random_int(0, window.game.game_height);
             }while ( phys.check_collision_by_points(x, y, 50.0, happy, balloons, evils) == true);
             balloons[i].x = x;
             balloons[i].y = y;
@@ -407,8 +436,8 @@
                 balloons[i].drawable = true;
                 new_balloons -= 1;
                 do {
-                    x = util.get_random_int(0,game_width);
-                    y = util.get_random_int(0,game_height);
+                    x = util.get_random_int(0, window.game.game_width);
+                    y = util.get_random_int(0, window.game.game_height);
                 }while ( phys.check_collision_by_points(x, y, 50.0, happy, balloons, evils) == true);
                 balloons[i].x = x;
                 balloons[i].y = y;
@@ -425,15 +454,15 @@
     var update_bombs = function() {
         var startX = 0,
             startY = 0,
-            partX = game_width / bomb.length;
-            partY = game_height / bomb.length;
+            partX = window.game.game_width / bomb.length;
+            partY = window.game.game_height / bomb.length;
         for (var i = 0; i < bomb.length; i++) {
             if (bomb[i].has_exploited == true && bomb[i].drawable == false) {
                 bomb[i].respawn(startX, startY, partX, partY);
                 startX = partX;
                 startY = partY;
-                partX += game_width / bomb.length;
-                partY += game_height / bomb.length;
+                partX += window.game.game_width / bomb.length;
+                partY += window.game.game_height / bomb.length;
             }
         };
     };
@@ -450,8 +479,8 @@
         current_index = balloons.length;
         for (var i = 0; i < n_balloons; i++) {
             do {
-                x = util.get_random_int(0,game_width);
-                y = util.get_random_int(0,game_height);
+                x = util.get_random_int(0, window.game.game_width);
+                y = util.get_random_int(0, window.game.game_height);
             }while ( phys.check_collision_by_points(x, y, 50.0, happy, balloons, evils) == true);
 
             balloons.push( Sprite({
@@ -470,13 +499,55 @@
             balloons[current_index + i].init();
         }
     };
+
+    var check_happy_lives = function() {
+        if (happy.lives.length === 0) {
+            happy.has_died = true;
+            //console.log("Happy has died! =(");
+        }
+    };
+
+    var check_evil_lives = function() {
+        for (var i = 0; i < evils.length; i++) {
+            if (evils[i].lives.length === 0) {
+                evils[i].has_died = true;
+                //console.log("Evil has died! =(");
+            }
+        };
+    };
+
+    /* check_end_of_game() Decides if the has ended and trigger the end events */
+    var check_end_of_game = function() {
+        var game_state;
+        if (happy.has_died == true && evils[0].has_died == true) { // Needs support
+            game_state = state.draw;
+        }else if (happy.has_died == true) {
+            game_state = state.evil_wins;
+        }else if (evils[0].has_died == true) {                     // Needs support
+            game_state = state.happy_wins;
+        }else if (balloons.limit <= 0 && util.get_drawables(balloons) === 0) {                     // Needs support
+            game_state = (happy.balloons_destroyed > evils[0].balloons_destroyed) ? (state.happy_wins):(state.evil_wins);
+        }else {
+            return ;
+        }
+        window.game.game_state = game_state;
+
+    };
+
+    var restart_game = function() {
+        happy.respawn();
+        evils[0].respawn();    // Need support for multiplayer
+        //add_balloons(25);
+        update_lives();
+        balloons.limit = 150;
+        respawn_all_balloons();
+        game_state = state.playing;
+        load_intervals();
+    };
     $(document).ready(function() {
         init();
         //load_game();
         //load_intervals();
         //animate();
     });
-
-
-    return game;
 })();

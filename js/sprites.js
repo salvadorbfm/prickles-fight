@@ -1,6 +1,9 @@
-game.resources = game.resources || 0;
+window.game = window.game || {};
+
+window.game.resources = game.resources || 0;
 var phys = game.phys || Phys();
 var util = game.util || Util();
+
 var BaseSprite = function(config) {
     config = config || {};
     var self = {};
@@ -139,21 +142,21 @@ var Sprite = function(config){
         var min = -5;
 
         if (axis == 'y') {
-            max = game_height;
+            max = window.game.game_height;
             if ( (self.y + self.direction_y*self.speed_y) > max )
               return true;
             if ( (self.y + self.direction_y*self.speed_y) < 0)
               return true;
         }
         else if (axis == 'x') {
-            max = game_width;
+            max = window.game.game_width;
             if ( (self.x + self.direction_x*self.speed_x) > max )
               return true;
             if ( (self.x + self.direction_x*self.speed_x) < 0)
               return true;
         }
         else {
-            max = (game_width>game_height)? game_width:game_height;
+            max = (window.game.game_width>window.game.game_height)? window.game.game_width:window.game.game_height;
         }
         return false;
 
@@ -189,7 +192,6 @@ var Sprite = function(config){
         temp_y = self.y;
         self.x += ( (self.direction_x)*(self.speed_x + energy_boost_x) );
         self.y += ( (self.direction_y)*(self.speed_y + energy_boost_y) );
-        //if (self.y < 1) debugger;
     };
 
     return self;
@@ -287,8 +289,8 @@ var Wing = function(config) {
         var x = 0,
             y = 0;
         do {
-                x = game.util.get_random_int(0,game_width);
-                y = game.util.get_random_int(0,game_height);
+                x = game.util.get_random_int(0,window.game.game_width);
+                y = game.util.get_random_int(0,window.game.game_height);
         }while ( phys.check_collision_by_points(x, y, 50.0, happy, balloons, evils) == true);
         self.x = x;
         self.y = y;
@@ -364,7 +366,7 @@ var Happy = function(config){
         self.balloons_destroyed = 0;
         self.was_attacked = false;
         self.has_died = false;
-        remove_powerup();
+        self.remove_powerup();
         self.is_moving = false;
         self.x = 50;
         self.y = 50;
@@ -433,10 +435,7 @@ var Happy = function(config){
 */
 var Evil = function(config){
     var self = {};
-
-    //debugger;
     self = Sprite(config);
-
     self.sprite_target = {balloon: -1, enemy: -1};
 
     self.init = function() {
@@ -457,8 +456,8 @@ var Evil = function(config){
         self.was_attacked = false;
         self.has_died = false;
         self.sprite_target = {balloon: -1, enemy: -1};
-        self.x = game_width - 100;
-        self.y = game_height - 100;
+        self.x = window.game.game_width - 100;
+        self.y = window.game.game_height - 100;
         self.on_hold();
     };
     // search(happy,sprites)

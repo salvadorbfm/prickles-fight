@@ -1,4 +1,4 @@
-var game = game || {};
+window.game = window.game || {};
 var Phys = function(config){
     config = config || {};
 
@@ -129,4 +129,4 @@ var Phys = function(config){
     return self;
 };
 
-game.phys = Phys();
+window.game.phys = Phys();

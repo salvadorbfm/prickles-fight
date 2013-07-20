@@ -179,6 +179,10 @@ body {
     border-radius:25px;
     box-shadow: 10px 10px 5px #888888;
     padding-bottom: 13px;
+    background-color: #F39C12;
+}
+#game_start_button:hover, #game_start_instructions:hover {
+    background-color: #F1C40F;
 }
 .green-background{
     background-color: #3E3F12;
@@ -194,18 +198,17 @@ body {
     text-shadow: 2px 5px 0 rgba(62, 63, 18, 0.7);
 }
 
-#game_instructions {
+#game_useful_info {
     font-family: Arial;
-    width: 680px;
+    margin: 20px auto;
+    padding: 15px 10px;
+    width: 80%;
     font-size: 18px;
-    background-color: #9E6F2E;
-    color:#FFFFFF;
+    background-color: #3498DB;
+    color:#F7F7F7;
     text-align: center;
-    padding-left: 10px;
-    padding-right: 10px;
-    padding-top: 15px;
-    padding-bottom: 15px;
     border:0px;
+    border-radius: 25px;
 }
 .heart {
     position: relative;
@@ -303,4 +306,12 @@ body {
 
 .grey_text {
     color: #888888;
+}
+
+
+
+/* Helpers */
+.hidden {
+    display: none !important;
+    visibility: hidden;
 }

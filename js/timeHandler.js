@@ -7,7 +7,7 @@
                 time_handler.running_functions["myfunc"] = false
                 time_handler.running_functions["myfunc"] = false
 */
-var game = game || {};
+window.game = window.game || {};
 var TimeHandler = function(config) {
     config = config || {};
     var self = {};
@@ -41,4 +41,4 @@ var TimeHandler = function(config) {
     return self;
 };
 
-game.time_handler = TimeHandler();
+window.game.time_handler = TimeHandler();
