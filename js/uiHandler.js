@@ -4,6 +4,14 @@ var UIHandler = function(config) {
     var self = {};
     var instructions_counter = 0;
     var timer = TimeHandler();
+    // callbacks
+    var load_game = config.load_game;
+    var animate = config.animate;
+    var load_intervals = config.load_intervals;
+    var state = config.state;
+
+    var game_state = state.onhold;
+
     self.init = function() {
         $('#game_start_button').mouseup(self.game_start_handler);
         $('#game_start_instructions').mouseup(self.game_instructions_handler);
@@ -62,6 +70,7 @@ var UIHandler = function(config) {
                 $('#game_score').show();
                 game_state = state.playing;
                 load_intervals();
+                animate();
                 timer.kill_interval("game_start_handler");
             }
         }, 1000, "game_start_handler");
