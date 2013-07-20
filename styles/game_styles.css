@@ -176,10 +176,16 @@ body {
     font-size: 45px;
     text-align:center;
     color: #FFFFFF;
-    background-color: #3E3F12;
     border-radius:25px;
     box-shadow: 10px 10px 5px #888888;
     padding-bottom: 13px;
+}
+.green-background{
+    background-color: #3E3F12;
+}
+.brown-background{
+    background-color: #9E6F2E;
+
 }
 #game_start_button span, #game_start_instructions span{
     position: relative;
@@ -201,16 +207,6 @@ body {
     padding-bottom: 15px;
     border:0px;
 }
-
-#contact {
-    font-family: Arial;
-    font-size: 20px;
-    color:#322020;
-    position: absolute;
-    right:15px;
-    bottom:15px;
-}
-
 .heart {
     position: relative;
     display: inline;

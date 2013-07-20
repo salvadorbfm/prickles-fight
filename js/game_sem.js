@@ -18,15 +18,27 @@
 */
 (function(undefined) {
 
+    // requestAnim shim layer by Paul Irish
+    window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       ||
+              window.webkitRequestAnimationFrame ||
+              window.mozRequestAnimationFrame    ||
+              window.oRequestAnimationFrame      ||
+              window.msRequestAnimationFrame     ||
+              function(/* function */ callback, /* DOMElement */ element){
+                window.setTimeout(callback, 1000 / 60);
+              };
+    })();
 
-    var game = [];
+    var game = {};
         game_width = 700,
         game_height = 500,
         canvas = null,
         context = null,
         ui_handler = null,
-        timer_handler = null,
-        resources = 30;
+        timer_handler = null;
+
+    game.resources = 0;
 
     var happy_assets = [
                         '/js/content/happy_right.png',
@@ -65,7 +77,7 @@
         winner_assets = ['../js/content/win_happy.png',
                          '../js/content/win_evil.png'];
 
-    var frames_rate = 1000/30,
+    var frames_rate = 16,
         update_rate = 1000/30,
         happy_frames_rate = 1000/2,
         evil_frames_rate = 1000/2,
@@ -147,7 +159,8 @@
         }
 
         self.onImageLoad = function(){
-            resources++;
+            game.resources++;
+            console.log("game.resources: " + game.resources);
         };
 
 
@@ -376,8 +389,8 @@
             self.drawable = true;
             self.is_available = true;
             setTimeout(function(){
-                self.is_available = false;
                 self.drawable = false;
+                self.is_available = false;
             },7000);
         };
 
@@ -939,18 +952,18 @@
 
             });
             load_game();
-            setTimeout(function(){
-                self.timer = timer_handler.safe_interval(function(){
-                    if (resources > 29) {
-                        $(".game_layer").hide();
-                        $('#game_canvas').show();
-                        $('#game_score').show();
-                        game_state = state.playing;
-                        load_intervals();
-                        timer_handler.kill_interval("game_start_handler");
-                    }
-                }, 1000, "game_start_handler");
-            },3000);
+
+            self.timer = timer_handler.safe_interval(function(){
+                if (game.resources > 52) {
+                    $(".game_layer").hide();
+                    $('#game_canvas').show();
+                    $('#game_score').show();
+                    game_state = state.playing;
+                    load_intervals();
+                    timer_handler.kill_interval("game_start_handler");
+                }
+            }, 1000, "game_start_handler");
+
 
         };
 
@@ -1058,8 +1071,8 @@
         happy.build_frames();
 
         wing = Wing({
-            x: util.get_random_int(10, game_width-10),
-            y: util.get_random_int(10, game_height-10),
+            x: util.get_random_int(10, game_width-20),
+            y: util.get_random_int(10, game_height-20),
             width: 73,
             height: 73,
             assets: wing_assets,
@@ -1069,24 +1082,23 @@
         balloons.limit = 150;
         add_balloons(25);
         add_bombs(2);
-        setTimeout( function(){
-            add_wing();
-        }, 15000);
         update_lives();
     };
     var load_intervals = function() {
-        //timer_handler.safe_interval(update_game, update_rate, "update_game");
-        timer_handler.safe_interval(animate, frames_rate, "animate");
-        timer_handler.safe_interval(update_evil, evil_frames_rate, "update_evil");
+        //timer_handler.safe_interval(animate, frames_rate, "animate");
+        animate();
+        /*timer_handler.safe_interval(update_evil, evil_frames_rate, "update_evil");
         timer_handler.safe_interval(update_bomb, bomb_frame_rate, "update_bomb");
         timer_handler.safe_interval(update_happy, happy_frames_rate, "update_happy");
         timer_handler.safe_interval(update_balloons, balloons_frames_rate, "update_balloons");
         timer_handler.safe_interval(update_bombs, 12000, "update_bombs");                        // Fixing
         timer_handler.safe_interval(update_background, background_frame_rate, "update_background");
-        setTimeout(function() {
+        var delay_wings = setTimeout(function() {
             timer_handler.safe_interval(add_wing, wing_update_rate, "add_wing");
+            clearInterval(delay_wings);
         }, wing_update_rate);
-        timer_handler.safe_interval(update_wing, wing_frame_rate, "update_wing");
+        timer_handler.safe_interval(update_wing, wing_frame_rate, "update_wing");*/
+
     };
 
     var restart_game = function() {
@@ -1101,6 +1113,10 @@
     };
 
     var animate = function() {
+        window.requestAnimFrame(animate);
+        draw_and_update();
+    };
+    var draw_and_update = function() {
         var last_target = -1;
         var scale = 0.0;
         var idx = 0;
@@ -1109,10 +1125,10 @@
         context.drawImage(background.frames[background_frame], 0, 0);
 
         // ************************** Check end of game  ****************************
-        check_happy_lives();
-        check_evil_lives();
-        check_end_of_game();
-
+        //check_happy_lives();
+        //check_evil_lives();
+        //check_end_of_game();
+        /*
         if (game_state === state.happy_wins || game_state === state.evil_wins) {
             idx = (game_state === state.happy_wins ) ? (0):(1);
             context.drawImage(winner.frames[idx], 140, 20);
@@ -1123,9 +1139,10 @@
             context.fillText('Press Space to play again!', 270, 540);
             return;
         }
-
+        */
         // ***************************       END            ************************
         //********************** Bombs Drawing and Updating ************************
+        /*
         for (var i=0; i < bomb.length; i++) {
             if (bomb[i].drawable === true) {
                 context.drawImage(bomb[i].frames[bomb[i].frame], bomb[i].x, bomb[i].y);
@@ -1136,36 +1153,44 @@
                 }
             }
         };
+       */
         //**********************          END               ************************
         //******************* Balloons Drawing and Updating ************************
+        /*
         for (var i = 0; i < balloons.length; i++) {
           if (balloons[i].drawable === false) continue;
             context.drawImage(balloons[i].frames[0], balloons[i].x, balloons[i].y);
             balloons[i].update_position();
         }
-        phys.check_collisions(balloons);
+        //phys.check_collisions(balloons);
+        */
         //**********************          END               ************************
+
         //********************** Happy Drawing and Updating ************************
         context.drawImage(happy.frames[happy_frame], happy.x, happy.y);
         if (happy.is_moving === true) {
-            happy.is_a_ball_destroyed(balloons);
+            //happy.is_a_ball_destroyed(balloons);
             happy.update_position();
         }
         //**********************          END               ************************
         // ********************** Wing Drawing and Updating ************************
+        /*
         if (wing.drawable === true && wing.is_available === true){
             context.drawImage(wing.frames[wing.frame], wing.x, wing.y);
-            wing.check_powerup(happy);
+            //wing.check_powerup(happy);
         }
+        */
         // ***************************       END            ************************
         //********************** Evil Drawing and Updating ************************
+        /*
         for (var i = 0; i < evils.length; i++) {
             context.drawImage(evils[i].frames[evil_frame], evils[i].x, evils[i].y);
             if (evils[i].is_moving === true) {
-                last_target = evils[i].search(happy,balloons,last_target);
-                evils[i].destroy(happy, balloons, phys);
+                //last_target = evils[i].search(happy,balloons,last_target);
+                //evils[i].destroy(happy, balloons, phys);
             }
         }
+        */
         //**********************          END               ************************
     };
 
