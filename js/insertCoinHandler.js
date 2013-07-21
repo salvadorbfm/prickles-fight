@@ -3,7 +3,6 @@
 var InsertCoinHandler = function( config ) {
     var self = config || {};
     var data = {};
-    var url = config.url || "";
     var default_json = "{status: 'Could not found the json file'}";
 
     self.save = function(config){
@@ -18,15 +17,31 @@ var InsertCoinHandler = function( config ) {
                 }
             }
         */
-        $.post( data.url, data.json_object )
+        $.ajax({
+            url: data.url,
+            type: "POST",
+            crossDomain: true,
+            data: data.gamestate,
+            dataType: "json",
+            success: done_handler,
+            error: fail_handler
+        });
+        /*$.ajax( data.url, data.json_object )
           .done( done_handler )
-          .fail( fail_handler );
+          .fail( fail_handler );*/
     };
 
-    self.load = function(){
-        var dfd = $.getJSON( url );
+    self.load = function( get_url ){
+        $.getJSON( get_url )
+        .done( function(data){
+            console.log("GET Success");
+            console.log(data);
+        })
+        .fail( function(data){
+            console.log("GET Fail");
+            console.log(data);
+        });
 
-        return dfd;
     };
 
     /*
@@ -36,21 +51,25 @@ var InsertCoinHandler = function( config ) {
         }
     */
     var build_object = function( config ){
-        url = url || "www.example.com";
         //data = JSON.stringify(config);
-        var json_object = JSON.stringify( config.json_data )|| default_json;
+        debugger;
+        var json_object = config.gamestate || default_json;
         var post_url = config.url || default_url;
 
-        return {json_object: json_object, url: post_url};
+        return {gamestate: json_object, url: post_url};
 
     };
 
-    var done_handler = function(){
+    var done_handler = function(data){
         console.log(" InsertCoinHandler Success!");
+        console.log("data: ");
+        console.log(data);
     };
 
-    var fail_handler = function(){
+    var fail_handler = function(data){
         console.log(" InsertCoinHandler Fail! =(");
+        console.log("data: ");
+        console.log(data);
     };
 
     return self;

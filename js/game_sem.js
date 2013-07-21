@@ -18,7 +18,9 @@
     window.game.game_height = 550;
 
     var host = "http://172.17.245.145:3000";
+    var routeGET = "/gamestates/show";
     var routeAndParams = "/gamestates/show/?user_id=1&game_id=2";
+    var routePOST = "/gamestates/";
     var insertCoinHandler = InsertCoinHandler( {url: host+routeAndParams} );
     var canvas = null,
       context = null;
@@ -145,7 +147,7 @@
         add_bombs(2);
         update_lives();
     };
-    function init() {
+    var init = function() {
       ui_handler = UIHandler({
         load_game : load_game,
         load_intervals : load_intervals,
@@ -162,13 +164,13 @@
       $('body').keypress(main_key_handler);
     }
 
-    function animate() {
+    var animate = function() {
         requestAnimFrame( animate );
         draw();
 
     }
 
-    function draw() {
+    var draw = function() {
       canvasDemo = false;
       var last_target = 0;
       if ( canvasDemo === true ){
@@ -250,16 +252,29 @@
     };
 
     var main_key_handler = function(event) {
+        var callback = "&callback=?";
+        var myJSONData = { "message" : "Hola InsertCoin"};
         console.log("event wich key: " + event.which);
         switch (event.which) {
             case 32:
                 if ( window.game.game_state === state.happy_wins || window.game.game_state === state.evil_wins) {
                     restart_game();
                 }
+            break;
             case 115:
                 // TODO: Build Saved State Game
                 console.log("Saving game");
-            break;
+                insertCoinHandler.save({
+                    url: host + routePOST,
+                    gamestate: { gamestate : {
+                                "user_id" : 1,
+                                "game_id" : 1,
+                                "platform_id" : 5,
+                                "data": JSON.stringify( myJSONData)
+                        }
+                    }
+                });
+                //insertCoinHandler.load( host + routeAndParams  + "&callback=?");
             break;
             case 13:
              event.preventDefault();

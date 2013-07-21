@@ -50,7 +50,7 @@ var BaseSprite = function(config) {
 
     self.onImageLoad = function(){
         game.resources++;
-        console.log("game.resources: " + game.resources);
+//        console.log("game.resources: " + game.resources);
     };
 
 
