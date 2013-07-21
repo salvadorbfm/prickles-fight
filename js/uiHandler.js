@@ -15,7 +15,6 @@ var UIHandler = function(config) {
         $('#game_start_button').mouseup(self.game_start_handler);
         $('#game_start_instructions').mouseup(self.game_instructions_handler);
 
-        $('body').keypress(self.main_key_handler);
         $('.game_layer').hide();
         $('#game_start_screen').show();
     };
@@ -23,22 +22,7 @@ var UIHandler = function(config) {
     self.counter = 3;
     self.xTriggered = 0;
 
-    self.main_key_handler = function(event) {
-        console.log("event wich key: " + event.which);
-        switch (event.which) {
-            case 32:
-                if ( window.game.game_state === state.happy_wins || window.game.game_state === state.evil_wins) {
-                    restart_game();
-                }
-            case 115:
-                // TODO: Build Saved State Game
-            break;
-            break;
-            case 13:
-             event.preventDefault();
-            break;
-        }
-    };
+
     self.game_start_handler = function() {
         $('.game_layer').hide();
         $("#game_counter_screen").show();

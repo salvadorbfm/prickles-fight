@@ -16,6 +16,10 @@
     window.game.resources = 0;
     window.game.game_width = 750;
     window.game.game_height = 550;
+
+    var host = "http://172.17.245.145:3000";
+    var routeAndParams = "/gamestates/show/?user_id=1&game_id=2";
+    var insertCoinHandler = InsertCoinHandler( {url: host+routeAndParams} );
     var canvas = null,
       context = null;
 
@@ -153,8 +157,9 @@
       canvas = document.getElementById( 'game_canvas' );
       canvas.width = window.game.game_width;
       canvas.height = window.game.game_height;
-
       context = canvas.getContext( '2d' );
+
+      $('body').keypress(main_key_handler);
     }
 
     function animate() {
@@ -242,13 +247,30 @@
         }
         //**********************          END               ************************
       }
-    }
+    };
+
+    var main_key_handler = function(event) {
+        console.log("event wich key: " + event.which);
+        switch (event.which) {
+            case 32:
+                if ( window.game.game_state === state.happy_wins || window.game.game_state === state.evil_wins) {
+                    restart_game();
+                }
+            case 115:
+                // TODO: Build Saved State Game
+                console.log("Saving game");
+            break;
+            break;
+            case 13:
+             event.preventDefault();
+            break;
+        }
+    };
+
     var load_intervals = function() {
         timer_handler.safe_interval(update_balloons, balloons_frames_rate, "update_balloons");
         //timer_handler.safe_interval(update_evil, evil_frames_rate, "update_evil");
         timer_handler.safe_interval(update_bomb, bomb_frame_rate, "update_bomb");
-        timer_handler.safe_interval(update_bombs, 12000, "update_bombs");                        // Fixing
-        //timer_handler.safe_interval(update_background, background_frame_rate, "update_background");
         timer_handler.safe_interval(update_wing, wing_frame_rate, "update_wing");
         var delay_wings = setTimeout(function() {
             timer_handler.safe_interval(add_wing, wing_update_rate, "add_wing");
