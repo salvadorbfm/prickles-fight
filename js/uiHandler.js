@@ -9,12 +9,15 @@ var UIHandler = function(config) {
     var animate = config.animate;
     var load_intervals = config.load_intervals;
     var restart_game = config.restart_game;
+    var load_from_insertcoin_callback = config.callbacks.load_from_insertcoin;
     var state = config.state;
 
     self.init = function() {
         $('#game_start_button').mouseup(self.game_start_handler);
         $('#game_start_instructions').mouseup(self.game_instructions_handler);
-
+        $("#load_game_button").mouseup( function() {
+            load_from_insertcoin_callback();
+        });
         $('.game_layer').hide();
         $('#game_start_screen').show();
     };

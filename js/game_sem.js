@@ -19,7 +19,7 @@
 
     var host = "http://172.17.245.145:3000";
     var routeGET = "/gamestates/show";
-    var routeAndParams = "/gamestates/show/?user_id=1&game_id=2";
+    var routeAndParams = "/gamestates/show/?user_id=1&game_id=1";
     var routePOST = "/gamestates/";
     var insertCoinHandler = InsertCoinHandler( {url: host+routeAndParams} );
     var canvas = null,
@@ -153,7 +153,10 @@
         load_intervals : load_intervals,
         animate : animate,
         state : state,
-        restart_game: restart_game
+        restart_game: restart_game,
+        callbacks : {
+            load_from_insertcoin : load_from_insertcoin
+        }
       });
       ui_handler.init();
       canvas = document.getElementById( 'game_canvas' );
@@ -253,7 +256,7 @@
 
     var main_key_handler = function(event) {
         var callback = "&callback=?";
-        var myJSONData = { "message" : "Hola InsertCoin"};
+        var myJSONData = { happy: happy, evils : evils, balloons:balloons };
         console.log("event wich key: " + event.which);
         switch (event.which) {
             case 32:
@@ -281,7 +284,9 @@
             break;
         }
     };
-
+    var load_from_insertcoin = function(){
+        insertCoinHandler.load( host + routeAndParams  + "&callback=?");
+    };
     var load_intervals = function() {
         timer_handler.safe_interval(update_balloons, balloons_frames_rate, "update_balloons");
         //timer_handler.safe_interval(update_evil, evil_frames_rate, "update_evil");

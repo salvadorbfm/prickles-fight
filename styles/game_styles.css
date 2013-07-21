@@ -51,7 +51,10 @@ body {
     font-smoothing: antialiased;
 }
 
-
+ul{
+    list-style: none;
+    padding: 0px;
+}
 #info {
     margin-top:10px;
     color: #353535;
@@ -163,25 +166,22 @@ body {
     border-radius:25px;
     box-shadow: 5px 5px 10px #888888;
 }
-#game_start_button {
-    margin: 0px auto;
-    margin-top: 140px;
+.nav_buttons{
+    width: 100%;
+    margin: 100px auto;
 }
-#game_start_instructions {
-    margin: 0px auto;
-}
-#game_start_button, #game_start_instructions {
-    width: 400px;
-    height: 100px;
-    font-size: 45px;
+.game_button {
+    margin: 20px auto 0px auto;
+    width: 420px;
+    height: 80px;
+    font-size: 35px;
     text-align:center;
     color: #FFFFFF;
     border-radius:25px;
     box-shadow: 10px 10px 5px #888888;
-    padding-bottom: 13px;
     background-color: #F39C12;
 }
-#game_start_button:hover, #game_start_instructions:hover {
+.game_button:hover {
     background-color: #F1C40F;
 }
 .green-background{
@@ -191,7 +191,7 @@ body {
     background-color: #9E6F2E;
 
 }
-#game_start_button span, #game_start_instructions span{
+.game_button span{
     position: relative;
     top: 50%;
     margin: 20px auto 20px auto;
