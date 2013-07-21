@@ -26,12 +26,10 @@ var InsertCoinHandler = function( config ) {
             success: done_handler,
             error: fail_handler
         });
-        /*$.ajax( data.url, data.json_object )
-          .done( done_handler )
-          .fail( fail_handler );*/
     };
 
     self.load = function( get_url ){
+        // TODO Should return a dfd that will be handled outside
         $.getJSON( get_url )
         .done( function(data){
             console.log("GET Success");

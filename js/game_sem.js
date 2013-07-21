@@ -256,7 +256,7 @@
 
     var main_key_handler = function(event) {
         var callback = "&callback=?";
-        var myJSONData = { happy: happy, evils : evils, balloons:balloons };
+        var myJSONData = { message: "Ajua"};
         console.log("event wich key: " + event.which);
         switch (event.which) {
             case 32:
